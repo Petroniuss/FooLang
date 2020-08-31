@@ -4,11 +4,12 @@ import Control.Monad
 import Control.Monad.Trans
 import Lambda.Typed.Eval
 import Lambda.Typed.Parser
+import Lambda.Typed.Pretty
 import Lambda.Typed.Syntax
 import System.Console.Haskeline
 
 showStep :: (Int, Expr) -> IO ()
-showStep (d, x) = putStrLn ((replicate d ' ') ++ "=> " ++ (show x))
+showStep (d, x) = putStrLn ((replicate d ' ') ++ "=> " ++ (prettyprintExpr x))
 
 process :: String -> IO ()
 process line = do

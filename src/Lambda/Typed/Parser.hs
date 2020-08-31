@@ -1,7 +1,7 @@
 module Lambda.Typed.Parser (parseExpr) where
 
 import Data.Char
-import Lamda.Typed.Syntax
+import Lambda.Typed.Syntax
 import Text.Parsec
 import qualified Text.Parsec.Expr as Ex
 import Text.Parsec.Language (haskellStyle)

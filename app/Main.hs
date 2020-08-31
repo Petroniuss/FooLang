@@ -1,6 +1,6 @@
 module Main where
 
-import Untyped.Runner
+import Lambda.Typed.Runner (run)
 
 main :: IO ()
 main = run
