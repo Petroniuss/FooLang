@@ -52,6 +52,7 @@ number = do
   n <- natural
   return (Lit (LInt (fromIntegral n)))
 
+-- \x y. x  equivalent to \x.\y. x
 lambda :: Parser Expr
 lambda = do
   reservedOp "\\"
