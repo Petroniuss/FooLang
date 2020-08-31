@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3b1b4d615a837d610f568df7cb23042d85d02bd8a8115213cd86c5e7bad26777
+-- hash: 7f392d7c29b8a0828d1364f22bb580c87b857883f8dc49998d1dd20ff2f9ec13
 
 name:           FooLang
 version:        0.1.0.0
@@ -27,13 +27,25 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Lambda.Typed.Eval
+      Lambda.Typed.Parser
+      Lambda.Typed.Runner
+      Lambda.Typed.Syntax
+      Untyped.Eval
+      Untyped.Parser
+      Untyped.Runner
+      Untyped.Syntax
   other-modules:
       Paths_FooLang
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
+    , containers
+    , haskeline
+    , mtl
+    , parsec
+    , text
   default-language: Haskell2010
 
 executable FooLang-exe
@@ -46,6 +58,11 @@ executable FooLang-exe
   build-depends:
       FooLang
     , base >=4.7 && <5
+    , containers
+    , haskeline
+    , mtl
+    , parsec
+    , text
   default-language: Haskell2010
 
 test-suite FooLang-test
@@ -59,4 +76,9 @@ test-suite FooLang-test
   build-depends:
       FooLang
     , base >=4.7 && <5
+    , containers
+    , haskeline
+    , mtl
+    , parsec
+    , text
   default-language: Haskell2010
