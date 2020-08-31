@@ -2,10 +2,10 @@
 
 module Lambda.Typed.Eval where
 
-import Control.Monad.State.Lazy
-import Data.Map.Strict
-import Lambda.Typed.Syntax
-import Prelude hiding (id)
+import           Control.Monad.State.Lazy
+import           Data.Map.Strict
+import           Lambda.Typed.Syntax
+import           Prelude                  hiding (id)
 
 type Context = Map Name Value
 
@@ -26,7 +26,7 @@ data Value
   deriving (Show)
 
 literalValue :: Literal -> Value
-literalValue (LInt i) = VInt i
+literalValue (LInt i)  = VInt i
 literalValue (LBool b) = VBool b
 
 eval :: Context -> Expr -> Value
