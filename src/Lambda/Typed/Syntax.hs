@@ -2,8 +2,6 @@ module Lambda.Typed.Syntax where
 
 type Name = String
 
-data Syntax = VarS | LamS | AppS
-
 data Expr
   = Var {id :: Name}
   | Lit {literal :: Literal}
@@ -12,8 +10,8 @@ data Expr
   deriving (Eq, Show)
 
 data Literal
-  = LInt {vInt :: Int}
-  | LBool {vBool :: Bool}
+  = LInt {lInt :: Int}
+  | LBool {lBool :: Bool}
   deriving (Show, Eq, Ord)
 
 data Type
