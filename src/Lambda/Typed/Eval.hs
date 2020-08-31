@@ -9,10 +9,9 @@ import Prelude hiding (id)
 
 type Context = Map Name Value
 
-extendCtx :: (Name, Value) -> Eval ()
-extendCtx (k, v) = do
-  ctx <- get
-  put $ insert k v ctx
+extendCtx :: Context -> (Name, Value) -> Context
+extendCtx ctx (k, v) =
+  insert k v ctx
 
 getValue :: Context -> Name -> Value
 getValue = (!)
@@ -30,33 +29,24 @@ literalValue :: Literal -> Value
 literalValue (LInt i) = VInt i
 literalValue (LBool b) = VBool b
 
-type EvalState = Context
+eval :: Context -> Expr -> Value
+eval ctx Lit {..} =
+  literalValue literal
+eval ctx Var {..} =
+  getValue ctx id
+eval ctx Lam {..} =
+  VClosure arg body ctx
+eval ctx App {..} =
+  let closure = eval ctx f
+      arg = eval ctx x
+      res = apply closure arg
+   in res
 
-type EvalResult = Value
-
-type Eval a = State EvalState a
-
-eval :: Expr -> Eval Value
-eval Lit {..} = do
-  return $ literalValue literal
-eval Var {..} = do
-  ctx <- get
-  return $ getValue ctx id
-eval Lam {..} = do
-  ctx <- get
-  return $ VClosure arg body ctx
-eval App {..} = do
-  closure <- eval f
-  body <- eval x
-  apply closure body
-
--- It's not correct actually
--- Applies the closure
-apply :: Value -> Value -> Eval Value
-apply (VClosure name body ctx) arg = do
-  extendCtx (name, arg)
-  eval body
+apply :: Value -> Value -> Value
+apply (VClosure name body ctx) arg =
+  let ctx' = extendCtx ctx (name, arg)
+   in eval ctx' body
 apply _ _ = error "Tried to apply noclosure"
 
 runEval :: Expr -> Value
-runEval expr = evalState (eval expr) fresh
+runEval = eval fresh
