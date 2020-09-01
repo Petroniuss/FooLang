@@ -6,7 +6,7 @@ data Expr
   = Var {id :: Name}
   | Lit {literal :: Literal}
   | App {f :: Expr, x :: Expr}
-  | Lam {arg :: Name, body :: Expr}
+  | Lam {arg :: Name, ttype :: Type, body :: Expr}
   deriving (Eq, Show)
 
 data Literal
