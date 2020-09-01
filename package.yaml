@@ -25,6 +25,7 @@ dependencies:
   - parsec
   - containers
   - mtl
+  - transformers
   - haskeline
   - prettyprinter
 

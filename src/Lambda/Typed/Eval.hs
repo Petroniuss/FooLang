@@ -23,7 +23,11 @@ data Value
   = VClosure {name :: Name, body :: Expr, ctx :: Context}
   | VInt {vInt :: Int}
   | VBool {vBool :: Bool}
-  deriving (Show)
+
+instance Show (Value) where
+  show (VClosure {..}) = "<<closure>> "
+  show VInt { .. }     = show vInt
+  show VBool { .. }    = show vBool
 
 literalValue :: Literal -> Value
 literalValue (LInt i)  = VInt i
@@ -33,20 +37,19 @@ eval :: Context -> Expr -> Value
 eval ctx Lit {..} =
   literalValue literal
 eval ctx Var {..} =
-  getValue ctx id
+  getValue ctx name
 eval ctx Lam {..} =
   VClosure arg body ctx
 eval ctx App {..} =
   let closure = eval ctx f
       arg = eval ctx x
-      res = apply closure arg
-   in res
+   in apply closure arg
 
 apply :: Value -> Value -> Value
 apply (VClosure name body ctx) arg =
   let ctx' = extendCtx ctx (name, arg)
    in eval ctx' body
-apply _ _ = error "Tried to apply noclosure"
+apply _ _ = error "Tried to apply non-closure"
 
 runEval :: Expr -> Value
 runEval = eval fresh
