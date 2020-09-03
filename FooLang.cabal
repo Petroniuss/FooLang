@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ea11eeaa1aa3265185daf91cb0ef46e0fe95aa8bf220734fc2e37c3511d3c4f6
+-- hash: 408d347aa98d0f576bc1ac2029c2554f77b635cb138a88ef52dbae31d5fcfec4
 
 name:           FooLang
 version:        0.1.0.0
@@ -45,6 +45,7 @@ library
       base >=4.7 && <5
     , containers
     , haskeline
+    , hspec
     , mtl
     , parsec
     , prettyprinter
@@ -64,6 +65,7 @@ executable FooLang-exe
     , base >=4.7 && <5
     , containers
     , haskeline
+    , hspec
     , mtl
     , parsec
     , prettyprinter
@@ -84,6 +86,7 @@ test-suite FooLang-test
     , base >=4.7 && <5
     , containers
     , haskeline
+    , hspec
     , mtl
     , parsec
     , prettyprinter
