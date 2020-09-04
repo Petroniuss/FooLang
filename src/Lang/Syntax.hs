@@ -41,7 +41,7 @@ data Type
 infixr `TArr`
 
 -- Example: forall a b. a -> b -> Int
-data Scheme = Forall [TypeVar] Type
+data TypeScheme = Forall [TypeVar] Type
     deriving (Eq, Show, Ord)
 
 -- Ground types
