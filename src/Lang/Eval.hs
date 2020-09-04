@@ -1,73 +1,89 @@
 module Lang.Eval where
 
--- Since eval is so much easier I should begin with this guy :)
+ -- Since eval is so much easier I should begin with this guy :)
 -- We don't care about errors since well-typed program cannot go wrong...
 
-import qualified Data.Map             as Map
+import qualified Data.Map               as Map
 
+import           Control.Monad
+import           Control.Monad.Identity (Identity)
 import           Control.Monad.Reader
 import           Lang.Syntax
 
-type Ctx = Map.Map String Value
+
+-------------------------- TOP LEVEL ----------------------------------
+evaluate :: TermCtx -> Expr -> Value
+evaluate = flip $ runReader . eval
 
 data Value
     = VInt Int
     | VBool Bool
-    | VClosure { argName :: String, body :: Expr, ctx :: Ctx }
+    | VClosure { argName :: String, body :: Expr, ctx :: TermCtx }
 
-emptyCtx :: Ctx
-emptyCtx = Map.empty
+-------------------------- TOP LEVEL ----------------------------------
 
-get :: Ctx -> String -> Value
-get ctx name = (Map.!) ctx name
+type TermCtx = Map.Map String Value
 
-extend :: Ctx -> String -> Value -> Ctx
-extend ctx name val = Map.insert name val ctx
+type EvalT a = Reader TermCtx a
 
-literal :: Literal -> Value
-literal (LInt i)  = VInt . fromIntegral $ i
-literal (LBool b) = VBool b
+-- Pulls value out of the eval context by name
+getValue :: String -> EvalT Value
+getValue name = ask >>= return . (flip (Map.!)) name
+
+-- Execute action in current environment extend by key-value pair
+inExtended :: String -> Value -> EvalT a -> EvalT a
+inExtended name val = local (Map.insert name val)
+
+-- Execute action in given environement extend by key-value pair
+inModified :: TermCtx -> String -> Value -> EvalT a -> EvalT a
+inModified ctx' name value action =
+    local (\_ -> Map.insert name value ctx') action
 
 
-type EvalT a = Reader Ctx
+-- We need that in order to perform non-exhaustive pattern matching
+instance MonadFail Identity where
+    fail = fail
 
--- Actually we might store our ctx in readerT
-evaluate :: Ctx -> Expr -> Value
-evaluate ctx expr = case expr of
+eval :: Expr -> EvalT Value
+eval expr = case expr of
+    -- Whenever we encounter reference to some variable x
+    -- we pull it out of the current context
+    (Var name) ->
+        getValue name
 
-    (Var name) -> get ctx name
+    -- We instantiate literal value
+    (Lit lit)  ->
+        return $ instantiateLiteral lit
 
-    (Lit lit)  -> literal lit
+    -- We create closure with current context
+    (Lam name body) -> do
+        ctx <- ask
+        return $ VClosure name body ctx
 
-    (Op binop e1 e2) -> f v1 v2
-        where v1 = evaluate ctx e1
-              v2 = evaluate ctx e2
-              f = op binop
+    -- Bind name in closure to value of latter expression and evaluate first one
+    (App e1 e2) -> do
+        VClosure name body ctx' <- eval e1
+        v2 <- eval e2
+        inModified ctx' name v2 $ eval e1
 
-    (Lam name body) -> VClosure name body ctx
+    -- We apply binary operation
+    (Op binop left right) -> do
+        let f = op binop
+        v1 <- eval left
+        v2 <- eval right
+        return $ f v1 v2
 
-    (Let name e1 e2) ->
-        evaluate ctx' e2
-        where v1 = evaluate ctx e1
-              ctx' = extend ctx name v1
+    -- We evaluate expression in extended environement
+    (Let name e1 e2) -> do
+        v1 <- eval e1
+        inExtended name v1 (eval e2)
 
-    (If pred trBranch flBranch) ->
-        case (predValue $ evaluate ctx pred) of
-            True  -> evaluate ctx trBranch
-            False -> evaluate ctx flBranch
-
-        where predV = evaluate ctx pred
-              predValue (VBool b) = b
-              predValue _         = error "Well-typed program cannot go wrong :)"
-
-    (App e1 e2) ->
-        apply closure
-        where closure = evaluate ctx e1
-              argV = evaluate ctx e2
-              apply (VClosure name body ctx') =
-                  let ctx'' = extend ctx' name argV
-                    in evaluate ctx'' body
-
+    -- Check predicate and evaluate either left or right branch
+    (If predE trBranchE flBranchE) -> do
+        VBool bool <- eval predE
+        case bool of
+            True  -> eval trBranchE
+            False -> eval flBranchE
 
 -- Maps binary operation to function on values
 op :: BinOp -> (Value -> Value -> Value)
@@ -86,3 +102,9 @@ op binop = case binop of
         mult = liftIntOp (*) (VInt)
 
         eql = liftIntOp (==) VBool
+
+-- Maps Literal to Value
+instantiateLiteral :: Literal -> Value
+instantiateLiteral (LInt i)  = VInt . fromIntegral $ i
+instantiateLiteral (LBool b) = VBool b
+
