@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 408d347aa98d0f576bc1ac2029c2554f77b635cb138a88ef52dbae31d5fcfec4
+-- hash: f5da0d29edcbe775d9b7ceef358f8ff54e1ac0c849b345a2e9b21e6f0e43b15f
 
 name:           FooLang
 version:        0.1.0.0
@@ -33,9 +33,12 @@ library
       Lambda.Typed.Runner
       Lambda.Typed.Syntax
       Lambda.Typed.TypeChecker
+      Lang.Env
+      Lang.Eval
       Lang.Infer
       Lang.Lexer
       Lang.Parser
+      Lang.Pretty
       Lang.Syntax
   other-modules:
       Paths_FooLang
@@ -49,6 +52,7 @@ library
     , mtl
     , parsec
     , prettyprinter
+    , repline
     , text
     , transformers
   default-language: Haskell2010
@@ -69,6 +73,7 @@ executable FooLang-exe
     , mtl
     , parsec
     , prettyprinter
+    , repline
     , text
     , transformers
   default-language: Haskell2010
@@ -90,6 +95,7 @@ test-suite FooLang-test
     , mtl
     , parsec
     , prettyprinter
+    , repline
     , text
     , transformers
   default-language: Haskell2010

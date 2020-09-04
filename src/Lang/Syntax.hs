@@ -2,13 +2,11 @@ module Lang.Syntax where
 
 ---------------------- Syntax -------------------------------------
 
-type Name = String
-
 data Expr
-    = Var Name
+    = Var String
     | App Expr Expr
-    | Lam Name Expr
-    | Let Name Expr Expr
+    | Lam String Expr
+    | Let String Expr Expr
     | Lit Literal
     | If Expr Expr Expr
     | Fix Expr
@@ -31,19 +29,19 @@ data Program = Program [Decl] Expr deriving Eq
 ---------------------- Types -------------------------------------
 
 -- Type variable example: a
-newtype TVar =  TV String
+newtype TypeVar = TypeVar String
     deriving (Eq, Show, Ord)
 
 data Type
-    = TVar TVar -- Type variable
+    = TVar TypeVar -- Type variable
     | TCon String -- Ground type
     | TArr Type Type -- Function type
     deriving (Eq, Show, Ord)
 
 infixr `TArr`
 
--- Example: foralll a b. a -> b -> Int
-data Scheme = Forall [TVar] Type
+-- Example: forall a b. a -> b -> Int
+data Scheme = Forall [TypeVar] Type
     deriving (Eq, Show, Ord)
 
 -- Ground types
