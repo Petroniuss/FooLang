@@ -1,8 +1,8 @@
 module Lang.Eval (
-    TermCtx,
+    TermEnv,
     Value (..),
     evaluate,
-    emptyTermCtx
+    emptyTermEnv
 )
 where
 
@@ -16,39 +16,26 @@ import           Control.Monad.Identity (Identity)
 import           Control.Monad.Reader
 import           Lang.Syntax
 
-
 -------------------------- TOP LEVEL ----------------------------------
-type TermCtx = Map.Map String Value
 
-evaluate :: TermCtx -> Expr -> Value
+type TermEnv = Map.Map String Value
+
+evaluate :: TermEnv -> Expr -> Value
 evaluate = flip $ runReader . eval
 
-emptyTermCtx :: TermCtx
-emptyTermCtx = Map.empty
+emptyTermEnv :: TermEnv
+emptyTermEnv = Map.empty
 
 data Value
     = VInt Int
     | VBool Bool
-    | VClosure { argName :: String, body :: Expr, ctx :: TermCtx }
+    | VClosure { argName :: String, body :: Expr, ctx :: TermEnv }
     deriving (Eq, Ord, Show)
 
--------------------------- TOP LEVEL ----------------------------------
+----------------------------------------------------------------------
 
-type EvalT a = Reader TermCtx a
-
--- Pulls value out of the eval context by name
-getValue :: String -> EvalT Value
-getValue name = ask >>= return . (flip (Map.!)) name
-
--- Execute action in current environment extend by key-value pair
-inExtended :: String -> Value -> EvalT a -> EvalT a
-inExtended name val = local (Map.insert name val)
-
--- Execute action in given environement extend by key-value pair
-inModified :: TermCtx -> String -> Value -> EvalT a -> EvalT a
-inModified ctx' name value action =
-    local (\_ -> Map.insert name value ctx') action
-
+-- Eval monad
+type EvalT a = Reader TermEnv a
 
 -- We need that in order to perform non-exhaustive pattern matching
 instance MonadFail Identity where
@@ -117,3 +104,16 @@ op binop = case binop of
 instantiateLiteral :: Literal -> Value
 instantiateLiteral (LInt i)  = VInt . fromIntegral $ i
 instantiateLiteral (LBool b) = VBool b
+
+-- Pulls value out of the eval context by name
+getValue :: String -> EvalT Value
+getValue name = ask >>= return . (flip (Map.!)) name
+
+-- Execute action in current environment extend by key-value pair
+inExtended :: String -> Value -> EvalT a -> EvalT a
+inExtended name val = local (Map.insert name val)
+
+-- Execute action in given environement extend by key-value pair
+inModified :: TermEnv -> String -> Value -> EvalT a -> EvalT a
+inModified ctx' name value action =
+    local (\_ -> Map.insert name value ctx') action

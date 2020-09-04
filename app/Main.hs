@@ -3,12 +3,12 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-import qualified Lang.Env
 import           Lang.Eval
 import           Lang.Infer
 import           Lang.Parser
 import           Lang.Pretty
 import           Lang.Syntax
+import qualified Lang.TypeEnv               as TypeEnv
 
 import qualified Data.Map                   as Map
 import           Data.Monoid
@@ -29,14 +29,15 @@ import           System.Exit
 -------------------------------------------------------------------------------
 
 data IState = IState
-  { tyctx :: Env.Env  -- Type environment
-  , tmctx :: TermEnv  -- Value environment
+  { typeEnv :: TypeEnv-- Type environment
+  , termEnv :: TermEnv  -- Value environment
   }
 
 initState :: IState
-initState = IState Env.empty emptyTmenv
+initState = IState Map.empty Map.empty
 
 type Repl a = HaskelineT (StateT IState IO) a
+
 hoistErr :: Show e => Either e a -> Repl a
 hoistErr (Right val) = return val
 hoistErr (Left err) = do
@@ -46,6 +47,12 @@ hoistErr (Left err) = do
 -------------------------------------------------------------------------------
 -- Execution
 -------------------------------------------------------------------------------
+
+runEval :: TermEnv -> String -> Expr -> (Value, TermEnv)
+runEval env name expr =
+  let v = evaluate env expr
+      env' = Map.insert name v env'
+    in (v, env')
 
 evalDef :: TermEnv -> (String, Expr) -> TermEnv
 evalDef env (nm, ex) = tmctx'
@@ -60,11 +67,12 @@ exec update source = do
   mod <- hoistErr $ parseModule "<stdin>" source
 
   -- Type Inference ( returns Typing Environment )
-  tyctx' <- hoistErr $ inferTop (tyctx st) mod
+  -- tyctx' <- hoistErr $ inferTop (tyctx st) mod
+  let tmctx = termEnv st
 
   -- Create the new environment
-  let st' = st { tmctx = foldl' evalDef (tmctx st) mod
-               , tyctx = tyctx' <> (tyctx st)
+  let st' = st { termEnv = foldl' evalDef tmctx mod
+               , typeEnv = Map.empty
                }
 
   -- Update the interpreter state
@@ -74,13 +82,13 @@ exec update source = do
   case lookup "it" mod of
     Nothing -> return ()
     Just ex -> do
-      let (val, _) = runEval (tmctx st') "it"  ex
+      let (val, _) = runEval (termEnv st') "it"  ex
       showOutput (show val) st'
 
 showOutput :: String -> IState -> Repl ()
 showOutput arg st = do
-  case Env.lookup "it" (tyctx st)  of
-    Just val -> liftIO $ putStrLn $ ppsignature (arg, val)
+  case TypeEnv.lookup (typeEnv st)  "it" of
+    Just val -> liftIO $ putStrLn $ show (arg, val)
     Nothing  -> return ()
 
 cmd :: String -> Repl ()
@@ -91,24 +99,24 @@ cmd source = exec True (L.pack source)
 -------------------------------------------------------------------------------
 
 -- :browse command
-browse :: [String] -> Repl ()
+browse :: String -> Repl ()
 browse _ = do
   st <- get
-  liftIO $ mapM_ putStrLn $ ppenv (tyctx st)
+  liftIO $ mapM_ putStrLn $ [show (typeEnv st)]
 
 -- :load command
-load :: [String] -> Repl ()
+load :: String -> Repl ()
 load args = do
-  contents <- liftIO $ L.readFile (unwords args)
+  contents <- liftIO $ L.readFile args
   exec True contents
 
 -- :type command
-typeof :: [String] -> Repl ()
-typeof args = do
+typeof :: String -> Repl ()
+typeof arg = do
   st <- get
-  let arg = unwords args
-  case Env.lookup arg (tyctx st) of
-    Just val -> liftIO $ putStrLn $ ppsignature (arg, val)
+  let ctx = typeEnv st
+  case TypeEnv.lookup ctx arg of
+    Just val -> liftIO $ putStrLn $ show (arg, val)
     Nothing  -> exec False (L.pack arg)
 
 -- :quit command
@@ -123,24 +131,34 @@ quit _ = liftIO $ exitSuccess
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
 defaultMatcher = [
     (":load"  , fileCompleter)
-  --, (":type"  , values)
+  -- , (":type"  , values)
   ]
 
 -- Default tab completer
 comp :: (Monad m, MonadState IState m) => WordCompleter m
 comp n = do
   let cmds = [":load", ":type", ":browse", ":quit"]
-  Env.TypeEnv ctx <- gets tyctx
+  ctx <- gets termEnv
   let defs = Map.keys ctx
   return $ filter (isPrefixOf n) (cmds ++ defs)
 
-shellOptions :: [(String, [String] -> Repl ())]
-options = [
+shellOptions :: [(String, String -> Repl ())]
+shellOptions = [
     ("load"   , load)
   , ("browse" , browse)
   , ("quit"   , quit)
   , ("type"   , Main.typeof)
   ]
+
+
+customBanner :: MultiLine -> Repl String
+customBanner SingleLine = pure ">>> "
+customBanner MultiLine  = pure "| "
+
+final :: Repl ExitDecision
+final = do
+  liftIO $ putStrLn "Goodbye!"
+  return Exit
 
 -------------------------------------------------------------------------------
 -- Entry Point
@@ -151,10 +169,10 @@ completer = Prefix (wordCompleter comp) defaultMatcher
 
 shell :: Repl a -> IO ()
 shell pre = flip evalStateT initState
-     $ evalRepl "FooLang> " cmd shellOptions completer pre
+     $ evalRepl customBanner cmd shellOptions Nothing (pure "FooLang> ")  completer pre final
 
 -------------------------------------------------------------------------------
--- Toplevel
+-- Topleve
 -------------------------------------------------------------------------------
 
 main :: IO ()
@@ -162,6 +180,7 @@ main = do
   args <- getArgs
   case args of
     []              -> shell (return ())
-    [fname]         -> shell (load [fname])
-    ["test", fname] -> shell (load [fname] >> browse [] >> quit ())
+    [fname]         -> shell (load fname)
+    ["test", fname] -> shell (load fname >> browse [] >> quit ())
     _               -> putStrLn "invalid arguments"
+

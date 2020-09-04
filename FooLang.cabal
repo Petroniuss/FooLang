@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 760af3be6b18d9e9ed7aa87639bd866b1df0cfe21dbd00dafe43f8532cabeba7
+-- hash: d867926c9e0dbe7581cf0aaed812154ec75366fe55db727c0a9afdd17742ba59
 
 name:           FooLang
 version:        0.1.0.0
@@ -27,13 +27,13 @@ source-repository head
 
 library
   exposed-modules:
-      Lang.Env
       Lang.Eval
       Lang.Infer
       Lang.Lexer
       Lang.Parser
       Lang.Pretty
       Lang.Syntax
+      Lang.TypeEnv
   other-modules:
       Paths_FooLang
   hs-source-dirs:
@@ -41,12 +41,12 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
-    , haskeline
+    , haskeline >=0.8.0.0
     , hspec
     , mtl
     , parsec
     , prettyprinter
-    , repline
+    , repline >=0.3.0.0
     , text
     , transformers
   default-language: Haskell2010
@@ -62,12 +62,12 @@ executable FooLang-exe
       FooLang
     , base >=4.7 && <5
     , containers
-    , haskeline
+    , haskeline >=0.8.0.0
     , hspec
     , mtl
     , parsec
     , prettyprinter
-    , repline
+    , repline >=0.3.0.0
     , text
     , transformers
   default-language: Haskell2010
@@ -84,12 +84,12 @@ test-suite FooLang-test
       FooLang
     , base >=4.7 && <5
     , containers
-    , haskeline
+    , haskeline >=0.8.0.0
     , hspec
     , mtl
     , parsec
     , prettyprinter
-    , repline
+    , repline >=0.3.0.0
     , text
     , transformers
   default-language: Haskell2010

@@ -27,9 +27,9 @@ dependencies:
   - containers
   - mtl
   - transformers
-  - haskeline
   - prettyprinter
-  - repline
+  - repline   >= 0.3.0.0
+  - haskeline >= 0.8.0.0
 
 library:
   source-dirs: src

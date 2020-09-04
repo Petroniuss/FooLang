@@ -1,4 +1,4 @@
-module Lang.Env where
+module Lang.TypeEnv where
 
 -- Our typing environment
 import           Control.Monad
@@ -14,24 +14,24 @@ import           Lang.Syntax
 --    Expression identifier to its type scheme:
 --      forall []   . Int -> Int
 --      forall ["a"]. a -> Int
-type Env = Map.Map String TypeScheme
+type TypeEnv = Map.Map String TypeScheme
 
-emptyEnv :: Env
-emptyEnv = Map.empty
+emptyTypeEnv :: TypeEnv
+emptyTypeEnv = Map.empty
 
-singleton :: Env -> String -> TypeScheme -> Env
+singleton :: TypeEnv -> String -> TypeScheme -> TypeEnv
 singleton env name scheme = Map.insert name scheme env
 
-join :: [Env] -> Env
-join = foldl' merge emptyEnv
+join :: [TypeEnv] -> TypeEnv
+join = foldl' merge emptyTypeEnv
 
-merge :: Env -> Env -> Env
+merge :: TypeEnv -> TypeEnv -> TypeEnv
 merge env1 env2 = env1 `Map.union` env2
 
-extend :: Env -> String -> TypeScheme -> Env
+extend :: TypeEnv -> String -> TypeScheme -> TypeEnv
 extend env name scheme = Map.insert name scheme env
 
-lookup :: Env -> String -> Maybe TypeScheme
+lookup :: TypeEnv -> String -> Maybe TypeScheme
 lookup env name = Map.lookup name env
 
 -- This is how we get new name for each type variable --
