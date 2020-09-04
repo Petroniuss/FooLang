@@ -35,14 +35,14 @@ data TypeError
     -- This is subtle.
     -- We throw this one when subsitution would result in an infinite type.
     -- Example: unifying typevar a and type a -> b
-    | InifiniteType TVar Type
+    | InifiniteType TypeVar Type
 
 
-type Infer a = ExceptT TypeError (NamesSupply) a
-type TypeEnv = Map.Map Name Scheme
+-- type Infer a = ExceptT TypeError (NamesSupply) a
+type TypeEnv = Map.Map String TypeScheme
 
 ---------------- Substitution --------------------
-type Subst = Map.Map TVar Type
+-- type Subst = Map.Map TVar Type
 
 -- Unifying
 -- Unify (TypeVar alpha) with (Type a) -> Subst [alpha -> a]
@@ -51,5 +51,8 @@ type Subst = Map.Map TVar Type
 --      (TypeVar "a1") `unify` (Type $ (TVar (TypeVar "a1") `TArr` (TVar (TypeVar "a2"))))
 -- If we were to use our (Uni-VarLeft) rule we'd construct infinite type.
 
--- First pass will generate set of constraints
-type Infer a = RWST
+-------------------------------------------------
+
+
+-- Generate set of constraints
+-- infer :: Expr -> Infer Type

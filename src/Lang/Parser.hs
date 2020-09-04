@@ -33,11 +33,11 @@ bool :: Parser Expr
 bool = (reserved "True" >> return (Lit (LBool True)))
     <|> (reserved "False" >> return (Lit (LBool False)))
 
-fix :: Parser Expr
-fix = do
-  reservedOp "fix"
-  x <- expr
-  return (Fix x)
+-- fix :: Parser Expr
+-- fix = do
+--   reservedOp "fix"
+--   x <- expr
+--   return (Fix x)
 
 lambda :: Parser Expr
 lambda = do
@@ -84,7 +84,7 @@ aexp =
   <|> bool
   <|> number
   <|> ifthen
-  <|> fix
+  -- <|> fix
   <|> try letrecin
   <|> letin
   <|> lambda
@@ -126,15 +126,15 @@ letdecl = do
   body <- expr
   return $ (name, foldr Lam body args)
 
-letrecdecl :: Parser (String, Expr)
-letrecdecl = do
-  reserved "let"
-  reserved "rec"
-  name <- identifier
-  args <- many identifier
-  reservedOp "="
-  body <- expr
-  return $ (name, Fix $ foldr Lam body (name:args))
+-- letrecdecl :: Parser (String, Expr)
+-- letrecdecl = do
+--   reserved "let"
+--   reserved "rec"
+--   name <- identifier
+--   args <- many identifier
+--   reservedOp "="
+--   body <- expr
+--   return $ (name, Fix $ foldr Lam body (name:args))
 
 val :: Parser Binding
 val = do
@@ -142,7 +142,8 @@ val = do
   return ("it", ex)
 
 decl :: Parser Binding
-decl = try letrecdecl <|> letdecl <|> val
+-- decl = try letrecdecl <|> letdecl <|> val
+decl = try letdecl <|> val
 
 top :: Parser Binding
 top = do

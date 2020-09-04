@@ -1,7 +1,6 @@
 module Lang.Env where
 
 -- Our typing environment
-
 import           Control.Monad
 import           Control.Monad.Identity
 import           Control.Monad.State
@@ -34,7 +33,6 @@ extend env name scheme = Map.insert name scheme env
 
 lookup :: Env -> String -> Maybe TypeScheme
 lookup env name = Map.lookup name env
-
 
 -- This is how we get new name for each type variable --
 instance MonadFail Identity where
