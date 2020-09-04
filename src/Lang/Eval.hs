@@ -1,4 +1,10 @@
-module Lang.Eval where
+module Lang.Eval (
+    TermCtx,
+    Value (..),
+    evaluate,
+    emptyTermCtx
+)
+where
 
  -- Since eval is so much easier I should begin with this guy :)
 -- We don't care about errors since well-typed program cannot go wrong...
@@ -27,7 +33,6 @@ data Value
     deriving (Eq, Ord, Show)
 
 -------------------------- TOP LEVEL ----------------------------------
-
 
 type EvalT a = Reader TermCtx a
 
