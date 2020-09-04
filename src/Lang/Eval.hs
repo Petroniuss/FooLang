@@ -12,17 +12,22 @@ import           Lang.Syntax
 
 
 -------------------------- TOP LEVEL ----------------------------------
+type TermCtx = Map.Map String Value
+
 evaluate :: TermCtx -> Expr -> Value
 evaluate = flip $ runReader . eval
+
+emptyTermCtx :: TermCtx
+emptyTermCtx = Map.empty
 
 data Value
     = VInt Int
     | VBool Bool
     | VClosure { argName :: String, body :: Expr, ctx :: TermCtx }
+    deriving (Eq, Ord, Show)
 
 -------------------------- TOP LEVEL ----------------------------------
 
-type TermCtx = Map.Map String Value
 
 type EvalT a = Reader TermCtx a
 
@@ -64,7 +69,7 @@ eval expr = case expr of
     (App e1 e2) -> do
         VClosure name body ctx' <- eval e1
         v2 <- eval e2
-        inModified ctx' name v2 $ eval e1
+        inModified ctx' name v2 $ eval body
 
     -- We apply binary operation
     (Op binop left right) -> do
@@ -107,4 +112,3 @@ op binop = case binop of
 instantiateLiteral :: Literal -> Value
 instantiateLiteral (LInt i)  = VInt . fromIntegral $ i
 instantiateLiteral (LBool b) = VBool b
-

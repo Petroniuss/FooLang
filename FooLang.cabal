@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f5da0d29edcbe775d9b7ceef358f8ff54e1ac0c849b345a2e9b21e6f0e43b15f
+-- hash: 760af3be6b18d9e9ed7aa87639bd866b1df0cfe21dbd00dafe43f8532cabeba7
 
 name:           FooLang
 version:        0.1.0.0
@@ -27,12 +27,6 @@ source-repository head
 
 library
   exposed-modules:
-      Lambda.Typed.Eval
-      Lambda.Typed.Lexer
-      Lambda.Typed.Parser
-      Lambda.Typed.Runner
-      Lambda.Typed.Syntax
-      Lambda.Typed.TypeChecker
       Lang.Env
       Lang.Eval
       Lang.Infer
