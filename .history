@@ -1,0 +1,26 @@
+quit
+:quit
+ls
+let x = 2
+x
+let x = 2
+x 1
+let x = (\x -> 2)
+x
+let x = 1
+i 1
+let i x = x
+:t
+:type x
+x
+x
+let x = 1
+:paste
+:paste
+paste
+1 + 2
+f
+alf'asl
+ala
+(\x -> x)
+(\x -> x)

@@ -24,6 +24,11 @@ import           System.Console.Repline
 import           System.Environment
 import           System.Exit
 
+
+-- Okay so right now I want only evaluate entered expressions and manage state in Repl monad
+-- I Have included types but they're used in any way
+
+
 -------------------------------------------------------------------------------
 -- Types
 -------------------------------------------------------------------------------
@@ -31,7 +36,7 @@ import           System.Exit
 data IState = IState
   { typeEnv :: TypeEnv-- Type environment
   , termEnv :: TermEnv  -- Value environment
-  }
+  } deriving (Show)
 
 initState :: IState
 initState = IState Map.empty Map.empty
@@ -44,6 +49,7 @@ hoistErr (Left err) = do
   liftIO $ print err
   abort
 
+-- This does not work yet!
 -------------------------------------------------------------------------------
 -- Execution
 -------------------------------------------------------------------------------
@@ -56,7 +62,7 @@ runEval env name expr =
 
 evalDef :: TermEnv -> (String, Expr) -> TermEnv
 evalDef env (nm, ex) = tmctx'
-  where (val, tmctx') = runEval env nm ex
+  where (_, tmctx') = runEval env nm ex
 
 exec :: Bool -> L.Text -> Repl ()
 exec update source = do
@@ -79,10 +85,12 @@ exec update source = do
   when update (put st')
 
   -- If a value is entered, print it.
+  liftIO $ putStrLn $ show st'
   case lookup "it" mod of
     Nothing -> return ()
     Just ex -> do
-      let (val, _) = runEval (termEnv st') "it"  ex
+      let (val, st'') = runEval (termEnv st') "it"  ex
+      liftIO $ putStrLn $ show val
       showOutput (show val) st'
 
 showOutput :: String -> IState -> Repl ()
