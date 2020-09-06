@@ -8,24 +8,36 @@ import           Lang.Infer
 import           Lang.Parser
 import           Lang.Pretty
 import           Lang.Syntax
-import qualified Lang.TypeEnv               as TypeEnv
+import qualified Lang.TypeEnv                                                     as TypeEnv
 
-import qualified Data.Map                   as Map
+import qualified Data.Map                                                         as Map
 import           Data.Monoid
-import qualified Data.Text.Lazy             as L
-import qualified Data.Text.Lazy.IO          as L
+import qualified Data.Text.Lazy                                                   as L
+import qualified Data.Text.Lazy.IO                                                as L
 
 import           Control.Monad.Identity
 import           Control.Monad.State.Strict
 
-import           Data.List                  (foldl', isPrefixOf)
+import           Data.List
+                                                                                   (foldl',
+                                                                                   isPrefixOf)
 
 import           System.Console.Haskeline
 import           System.Console.Repline
 import           System.Environment
 import           System.Exit
 -- import           System.Process             (callCommand)
-import           Text.Parsec.Error          (ParseError)
+import           Data.Text.Prettyprint.Doc
+                                                                                   (annotate,
+                                                                                   (<+>))
+import           Data.Text.Prettyprint.Doc.Render.Text
+                                                                                   (putDoc)
+import           Data.Text.Prettyprint.Doc.Render.Tutorials.TreeRenderingTutorial
+                                                                                   (Color (Green),
+                                                                                   bold,
+                                                                                   color)
+import           Text.Parsec.Error
+                                                                                   (ParseError)
 
 
 -------------------------------------------------------------------------------
@@ -107,8 +119,9 @@ typeof :: String -> Repl ()
 typeof arg = do
   st <- get
   let ctx = typeEnv st
+      style = color Green <> bold
   case TypeEnv.lookup ctx arg of
-    Just val -> liftIO $ putStrLn $ show (arg, val)
+    Just val -> liftIO $ putDoc ("Value" <+> (annotate style $ "Type"))
     Nothing  -> return ()
 
 -- :quit command

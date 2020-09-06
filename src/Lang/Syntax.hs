@@ -11,7 +11,6 @@ data Expr
     | If Expr Expr Expr
     | Fix Expr
     | Op BinOp Expr Expr
---
     deriving (Show, Eq, Ord)
 
 data Literal
@@ -21,10 +20,6 @@ data Literal
 
 data BinOp = Add | Sub | Mul | Eql
     deriving (Eq, Ord, Show)
-
-type Decl = (String, Expr)
-
-data Program = Program [Decl] Expr deriving Eq
 
 ---------------------- Types -------------------------------------
 
