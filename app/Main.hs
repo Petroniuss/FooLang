@@ -20,13 +20,12 @@ import           Control.Monad.State.Strict
 
 import           Data.List                  (foldl', isPrefixOf)
 
+import           System.Console.Haskeline
 import           System.Console.Repline
 import           System.Environment
 import           System.Exit
-
-
--- Okay so right now I want only evaluate entered expressions and manage state in Repl monad
--- I Have included types but they're used in any way
+-- import           System.Process             (callCommand)
+import           Text.Parsec.Error          (ParseError)
 
 
 -------------------------------------------------------------------------------
@@ -34,161 +33,168 @@ import           System.Exit
 -------------------------------------------------------------------------------
 
 data IState = IState
-  { typeEnv :: TypeEnv-- Type environment
+  { typeEnv :: TypeEnv  -- Type environment
   , termEnv :: TermEnv  -- Value environment
   } deriving (Show)
 
 initState :: IState
-initState = IState Map.empty Map.empty
+initState = IState
+  { typeEnv = Map.empty
+  , termEnv = emptyTermEnv }
+
+definitions :: IState -> [String]
+definitions IState { termEnv = tEnv } = Map.keys tEnv
 
 type Repl a = HaskelineT (StateT IState IO) a
 
-hoistErr :: Show e => Either e a -> Repl a
-hoistErr (Right val) = return val
-hoistErr (Left err) = do
-  liftIO $ print err
-  abort
-
--- This does not work yet!
 -------------------------------------------------------------------------------
 -- Execution
 -------------------------------------------------------------------------------
 
--- runEval :: TermEnv -> String -> Expr -> (Value, TermEnv)
--- runEval env name expr =
---   let v = evaluate env expr
---       env' = Map.insert name v env'
---     in (v, env')
+-- Everything happens here!
+exec :: L.Text -> Repl ()
+exec source = do
+  -- Get the current interpreter state
+  st@IState { typeEnv = tpEnv, termEnv = tmEnv } <- get
 
--- evalDef :: TermEnv -> (String, Expr) -> TermEnv
--- evalDef env (nm, ex) = tmctx'
---   where (_, tmctx') = runEval env nm ex
+  -- Parser ( returns AST )
+  ast <- handleParseError $ parseModule "<stdin>" source
 
--- exec :: Bool -> L.Text -> Repl ()
--- exec update source = do
---   -- Get the current interpreter state
---   st <- get
+  -- Type Inference ( returns Typing Environment )
+  -- tyctx' <- hoistErr $ inferTop (tyctx st) mod
 
---   -- Parser ( returns AST )
---   mod <- hoistErr $ parseModule "<stdin>" source
+  -- Create the new environment ()
+  let st' = IState { termEnv = foldl' evalDef tmEnv ast
+                   , typeEnv = Map.empty
+                   }
+  -- Update environment
+  put st'
 
---   -- Type Inference ( returns Typing Environment )
---   -- tyctx' <- hoistErr $ inferTop (tyctx st) mod
---   let tmctx = termEnv st
+  -- If a value is entered, print it.
+  -- This guy needs refactoring!
+  liftIO $ putStrLn $ show st'
+  case lookup "it" ast of
+    Nothing -> return ()
+    Just ex -> do
+      let val = evalExpr tmEnv ex
+      liftIO $ putStrLn $ show val
+      return ()
 
---   -- Create the new environment
---   let st' = st { termEnv = foldl' evalDef tmctx mod
---                , typeEnv = Map.empty
---                }
-
---   -- Update the interpreter state
---   when update (put st')
-
---   -- If a value is entered, print it.
---   liftIO $ putStrLn $ show st'
---   case lookup "it" mod of
---     Nothing -> return ()
---     Just ex -> do
---       let (val, st'') = runEval (termEnv st') "it"  ex
---       liftIO $ putStrLn $ show val
---       showOutput (show val) st'
-
--- showOutput :: String -> IState -> Repl ()
--- showOutput arg st = do
---   case TypeEnv.lookup (typeEnv st)  "it" of
---     Just val -> liftIO $ putStrLn $ show (arg, val)
---     Nothing  -> return ()
-
--- cmd :: String -> Repl ()
--- cmd source = exec True (L.pack source)
+handleParseError :: Either ParseError a -> Repl a
+handleParseError either =
+  case either of
+    Left err -> (liftIO . print) err >> abort
+    Right a  -> return a
 
 -- -------------------------------------------------------------------------------
 -- -- Commands
 -- -------------------------------------------------------------------------------
 
--- -- :browse command
--- browse :: String -> Repl ()
--- browse _ = do
---   st <- get
---   liftIO $ mapM_ putStrLn $ [show (typeEnv st)]
+-- :browse command
+browse :: String -> Repl ()
+browse _ = do
+  st <- get
+  liftIO $ mapM_ putStrLn $ [show (typeEnv st)]
 
--- -- :load command
--- load :: String -> Repl ()
--- load args = do
---   contents <- liftIO $ L.readFile args
---   exec True contents
+-- :load command
+load :: String -> Repl ()
+load args = do
+  contents <- liftIO $ L.readFile args
+  exec contents
 
--- -- :type command
--- typeof :: String -> Repl ()
--- typeof arg = do
---   st <- get
---   let ctx = typeEnv st
---   case TypeEnv.lookup ctx arg of
---     Just val -> liftIO $ putStrLn $ show (arg, val)
---     Nothing  -> exec False (L.pack arg)
+-- :type command
+typeof :: String -> Repl ()
+typeof arg = do
+  st <- get
+  let ctx = typeEnv st
+  case TypeEnv.lookup ctx arg of
+    Just val -> liftIO $ putStrLn $ show (arg, val)
+    -- Nothing  -> exec (L.pack arg)
+    Nothing  -> return ()
 
--- -- :quit command
--- quit :: a -> Repl ()
--- quit _ = liftIO $ exitSuccess
+-- :quit command
+quit :: a -> Repl ()
+quit _ = liftIO $ exitSuccess
 
 -- -------------------------------------------------------------------------------
 -- -- Interactive Shell
 -- -------------------------------------------------------------------------------
 
--- -- Prefix tab completer
--- defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
--- defaultMatcher = [
---     (":load"  , fileCompleter)
---   -- , (":type"  , values)
---   ]
+-- Prefix tab completer
+defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
+defaultMatcher = [
+    (":load"  , fileCompleter)
+  ]
 
--- -- Default tab completer
--- comp :: (Monad m, MonadState IState m) => WordCompleter m
--- comp n = do
---   let cmds = [":load", ":type", ":browse", ":quit"]
---   ctx <- gets termEnv
---   let defs = Map.keys ctx
---   return $ filter (isPrefixOf n) (cmds ++ defs)
+-- Default tab completer
+comp :: (Monad m, MonadState IState m) => WordCompleter m
+comp n = do
+  ctx <- get
+  let cmds = commandNames
+      defs = definitions ctx
 
--- shellOptions :: [(String, String -> Repl ())]
--- shellOptions = [
---     ("load"   , load)
---   , ("browse" , browse)
---   , ("quit"   , quit)
---   , ("type"   , Main.typeof)
---   ]
+  return $ filter (isPrefixOf n) (cmds ++ defs)
 
+commandNames :: [String]
+commandNames = map ((\s -> ":" <> s) . fst) shellOptions
 
--- customBanner :: MultiLine -> Repl String
--- customBanner SingleLine = pure ">>> "
--- customBanner MultiLine  = pure "| "
+shellOptions :: [(String, String -> Repl ())]
+shellOptions = [
+    ("load"   , load)        -- :load
+  , ("browse" , browse)      -- :browse
+  , ("quit"   , quit)        -- :quit
+  , ("type"   , typeof)      -- :type
+  ]
 
--- final :: Repl ExitDecision
--- final = do
---   liftIO $ putStrLn "Goodbye!"
---   return Exit
+say :: String -> Repl ()
+say words = do
+  liftIO $ putStrLn words >> return ()
+  -- liftIO $ callCommand $ "cowsay " <> words >> return ()
+
+shellWelcome :: Repl ()
+shellWelcome = say "Welcome to FooLang"
+
+shellGoodbye :: Repl ExitDecision
+shellGoodbye = say "Bye bye" >> return Exit
+
+shellBanner :: MultiLine -> Repl String
+shellBanner SingleLine = pure "FooLang> "
+shellBanner MultiLine  = pure "| "
+
+shellAction :: String -> Repl ()
+shellAction source = exec (L.pack source)
 
 -- -------------------------------------------------------------------------------
 -- -- Entry Point
 -- -------------------------------------------------------------------------------
 
--- completer :: CompleterStyle (StateT IState IO)
--- completer = Prefix (wordCompleter comp) defaultMatcher
+completer :: CompleterStyle (StateT IState IO)
+completer = Prefix (wordCompleter comp) defaultMatcher
 
--- shell :: Repl a -> IO ()
--- shell pre = flip evalStateT initState
---      $ evalRepl customBanner cmd shellOptions Nothing (pure "FooLang> ")  completer pre final
+shell :: Repl a -> IO ()
+shell action =
+  (flip evalStateT) initState $
+  evalReplOpts $ ReplOpts {
+    banner = shellBanner,
+    command = shellAction,
+    options = shellOptions,
+    prefix  = Just ':',
+    multilineCommand = Just "paste",
+    tabComplete = completer,
+    initialiser = shellWelcome >> action >> return (),
+    finaliser = shellGoodbye
+  }
 
+-----------------------------------------------------------------------------
+-- Toplevel
 -- -------------------------------------------------------------------------------
--- -- Topleve
--- -------------------------------------------------------------------------------
 
--- main :: IO ()
--- main = do
---   args <- getArgs
---   case args of
---     []              -> shell (return ())
---     [fname]         -> shell (load fname)
---     ["test", fname] -> shell (load fname >> browse [] >> quit ())
---     _               -> putStrLn "invalid arguments"
+main :: IO ()
+main = do
+  args <- getArgs
+  case args of
+    []              -> shell (return ())
+    [fname]         -> shell (load fname)
+    ["test", fname] -> shell (load fname >> browse [] >> quit ())
+    _               -> putStrLn "invalid arguments"
 

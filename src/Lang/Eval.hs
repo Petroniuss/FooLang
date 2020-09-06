@@ -1,7 +1,7 @@
 module Lang.Eval (
     TermEnv,
     Value (..),
-    evaluate,
+    evalExpr,
     evalDef,
     emptyTermEnv
 )
@@ -21,21 +21,16 @@ import           Lang.Syntax
 
 type TermEnv = Map.Map String Value
 
-evaluate :: TermEnv -> Expr -> Value
-evaluate = flip $ runReader . eval
+-- Evaluate expression within passed environment
+evalExpr :: TermEnv -> Expr -> Value
+evalExpr = flip $ runReader . eval
 
 -- For evaluating top level definition and binding it to specified name.
 -- Returns evaluated value (which might as well be lambda expression) and extended environment.
-runEval :: TermEnv -> String -> Expr -> (Value, TermEnv)
-runEval env name expr =
-  let v = evaluate env expr
-      env' = Map.insert name v env'
-    in (v, env')
-
--- Wrapper over runEval which simply returns modified environment.
 evalDef :: TermEnv -> (String, Expr) -> TermEnv
-evalDef env (nm, ex) = tmctx'
-  where (_, tmctx') = runEval env nm ex
+evalDef env (name, expr) =
+  let v = evalExpr env expr
+      in Map.insert name v env
 
 emptyTermEnv :: TermEnv
 emptyTermEnv = Map.empty
