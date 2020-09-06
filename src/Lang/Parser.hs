@@ -6,15 +6,17 @@ module Lang.Parser (
 ) where
 
 import           Text.Parsec
-import           Text.Parsec.Text.Lazy (Parser)
+import           Text.Parsec.Text.Lazy               (Parser)
 
-import qualified Text.Parsec.Expr      as Ex
-import qualified Text.Parsec.Token     as Tok
+import qualified Text.Parsec.Expr                    as Ex
+import qualified Text.Parsec.Token                   as Tok
 
-import qualified Data.Text.Lazy        as L
+import qualified Data.Text.Lazy                      as L
 
 import           Lang.Lexer
 import           Lang.Syntax
+import           Text.ParserCombinators.Parsec.Error (Message (Message),
+                                                      addErrorMessage)
 
 integer :: Parser Integer
 integer = Tok.integer lexer
@@ -33,11 +35,11 @@ bool :: Parser Expr
 bool = (reserved "True" >> return (Lit (LBool True)))
     <|> (reserved "False" >> return (Lit (LBool False)))
 
--- fix :: Parser Expr
--- fix = do
---   reservedOp "fix"
---   x <- expr
---   return (Fix x)
+fix :: Parser Expr
+fix = do
+  reservedOp "fix"
+  x <- expr
+  return (Fix x)
 
 lambda :: Parser Expr
 lambda = do
@@ -78,42 +80,49 @@ ifthen = do
   fl <- expr
   return (If cond tr fl)
 
-aexp :: Parser Expr
-aexp =
-      parens expr
-  <|> bool
-  <|> number
-  <|> ifthen
-  -- <|> fix
-  <|> try letrecin
-  <|> letin
-  <|> lambda
-  <|> variable
-
+-- If you are carfeul enaugh you will see that we have ciruclar dependencies..
+-- But as this is lazy haskell this is completelty leigit!
 term :: Parser Expr
-term = aexp >>= \x ->
-                (many1 aexp >>= \xs -> return (foldl App x xs))
-                <|> return x
+term =
+  try $ parens expr
+  <|> try bool
+  <|> try number
+  <|> try ifthen
+  <|> try fix
+  <|> try letrecin
+  <|> try letin
+  <|> try lambda
+  <|> try variable
 
-infixOp :: String -> (a -> a -> a) -> Ex.Assoc -> Op a
-infixOp x f = Ex.Infix (reservedOp x >> return f)
+
+binary :: String -> (a -> a -> a) -> Ex.Assoc -> Op a
+binary x f = Ex.Infix (reservedOp x >> return f)
 
 table :: Operators Expr
 table = [
     [
-      infixOp "*" (Op Mul) Ex.AssocLeft
+      binary "*" (Op Mul) Ex.AssocLeft
     ],
     [
-      infixOp "+" (Op Add) Ex.AssocLeft
-    , infixOp "-" (Op Sub) Ex.AssocLeft
+      binary "+" (Op Add) Ex.AssocLeft
+    , binary "-" (Op Sub) Ex.AssocLeft
     ],
     [
-      infixOp "==" (Op Eql) Ex.AssocLeft
+      binary "==" (Op Eql) Ex.AssocLeft
     ]
   ]
 
+-- In case this looks confusing:
+-- Parse expression and if it's possible to parse more expressions fold over them yielding tree of applications
+-- else return parsed expr
 expr :: Parser Expr
-expr = Ex.buildExpressionParser table term
+expr = do
+  x <- Ex.buildExpressionParser table term
+  (try $ do
+    xs <- many1 term
+    return (foldl App x xs))
+    <|> return x
+
 
 type Binding = (String, Expr)
 
@@ -126,24 +135,26 @@ letdecl = do
   body <- expr
   return $ (name, foldr Lam body args)
 
--- letrecdecl :: Parser (String, Expr)
--- letrecdecl = do
---   reserved "let"
---   reserved "rec"
---   name <- identifier
---   args <- many identifier
---   reservedOp "="
---   body <- expr
---   return $ (name, Fix $ foldr Lam body (name:args))
+letrecdecl :: Parser (String, Expr)
+letrecdecl = do
+  reserved "let"
+  reserved "rec"
+  name <- identifier
+  args <- many identifier
+  reservedOp "="
+  body <- expr
+  return $ (name, Fix $ foldr Lam body (name:args))
+
+valId :: String
+valId = "value_to_be_interpreted"
 
 val :: Parser Binding
 val = do
   ex <- expr
-  return ("it", ex)
+  return (valId, ex)
 
 decl :: Parser Binding
--- decl = try letrecdecl <|> letdecl <|> val
-decl = try letdecl <|> val
+decl = try letrecdecl <|> try letdecl <|> val
 
 top :: Parser Binding
 top = do
@@ -157,5 +168,14 @@ modl = many top
 parseExpr :: L.Text -> Either ParseError Expr
 parseExpr input = parse (contents expr) "<stdin>" input
 
-parseModule ::  FilePath -> L.Text -> Either ParseError [(String, Expr)]
-parseModule fname input = parse (contents modl) fname input
+-- Returns list of top level definitons together with identifiers and some value to interpret
+parseModule ::  FilePath -> L.Text -> Either ParseError ([(String, Expr)], Maybe Expr)
+parseModule fname input = prepare <$> parse (contents modl) fname input
+  where
+  prepare :: [Binding] -> ([Binding], Maybe Expr)
+  prepare xs =
+    let its = filter ((==valId) . fst) xs
+        others = filter ((/= valId) . fst) xs in
+      case (reverse its) of
+        []       -> (others, Nothing)
+        (last:_) -> (others, (Just . snd) last)

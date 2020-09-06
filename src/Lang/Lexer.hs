@@ -65,12 +65,9 @@ semiSep = Tok.semiSep lexer
 semi :: Parser String
 semi = Tok.semi lexer
 
-whitespace :: Parser ()
-whitespace = Tok.whiteSpace lexer
-
 contents :: Parser a -> Parser a
 contents p = do
-  whitespace
+  Tok.whiteSpace lexer
   r <- p
   eof
   return r

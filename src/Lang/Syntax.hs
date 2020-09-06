@@ -9,7 +9,7 @@ data Expr
     | Let String Expr Expr
     | Lit Literal
     | If Expr Expr Expr
-    -- | Fix Expr
+    | Fix Expr
     | Op BinOp Expr Expr
 --
     deriving (Show, Eq, Ord)

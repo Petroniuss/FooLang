@@ -60,6 +60,8 @@ exec source = do
   -- Parser ( returns AST )
   ast <- handleParseError $ parseModule "<stdin>" source
 
+  liftIO $ putStrLn $ show ast
+
   -- Type Inference ( returns Typing Environment )
   -- tyctx' <- hoistErr $ inferTop (tyctx st) mod
 
@@ -72,9 +74,8 @@ exec source = do
 
   -- If a value is entered, print it.
   -- This guy needs refactoring!
-  liftIO $ putStrLn $ show st'
   case lookup "it" ast of
-    Nothing -> return ()
+    Nothing -> liftIO $ putStrLn $ show st'
     Just ex -> do
       let val = evalExpr tmEnv ex
       liftIO $ putStrLn $ show val

@@ -21,19 +21,22 @@ import           Lang.Syntax
 
 type TermEnv = Map.Map String Value
 
+emptyTermEnv :: TermEnv
+emptyTermEnv = Map.empty
+
 -- Evaluate expression within passed environment
 evalExpr :: TermEnv -> Expr -> Value
 evalExpr = flip $ runReader . eval
 
+extendEnv :: TermEnv -> (String, Value) -> TermEnv
+extendEnv env (name, value)= Map.insert name value env
+
 -- For evaluating top level definition and binding it to specified name.
--- Returns evaluated value (which might as well be lambda expression) and extended environment.
+-- Returns evaluated value (which might as well be lambda expression (Vclosure)) and extended environment.
 evalDef :: TermEnv -> (String, Expr) -> TermEnv
 evalDef env (name, expr) =
   let v = evalExpr env expr
-      in Map.insert name v env
-
-emptyTermEnv :: TermEnv
-emptyTermEnv = Map.empty
+    in extendEnv env (name, v)
 
 data Value
     = VInt Int
