@@ -80,8 +80,8 @@ ifthen = do
   fl <- expr
   return (If cond tr fl)
 
--- If you are carfeul enaugh you will see that we have ciruclar dependencies..
--- But as this is lazy haskell this is completelty leigit!
+-- If you are careful enaugh you will see that we have ciruclar dependencies..
+-- But as this is lazy haskell it is completelty leigit!
 term :: Parser Expr
 term =
   try $ parens expr
@@ -168,11 +168,12 @@ modl = many top
 parseExpr :: L.Text -> Either ParseError Expr
 parseExpr input = parse (contents expr) "<stdin>" input
 
--- Returns list of top level definitons together with identifiers and some value to interpret
-parseModule ::  FilePath -> L.Text -> Either ParseError ([(String, Expr)], Maybe Expr)
+type AST = ([(String, Expr)], Maybe Expr)
+
+parseModule ::  FilePath -> L.Text -> Either ParseError AST
 parseModule fname input = prepare <$> parse (contents modl) fname input
   where
-  prepare :: [Binding] -> ([Binding], Maybe Expr)
+  prepare :: [Binding] -> AST
   prepare xs =
     let its = filter ((==valId) . fst) xs
         others = filter ((/= valId) . fst) xs in

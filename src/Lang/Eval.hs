@@ -7,8 +7,9 @@ module Lang.Eval (
 )
 where
 
- -- Since eval is so much easier I should begin with this guy :)
--- We don't care about errors since well-typed program cannot go wrong...
+------------------------------------------------------------------------
+--              Well-typed program cannot go wrong                    --
+------------------------------------------------------------------------
 
 import qualified Data.Map               as Map
 

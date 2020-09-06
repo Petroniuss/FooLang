@@ -58,9 +58,7 @@ exec source = do
   st@IState { typeEnv = tpEnv, termEnv = tmEnv } <- get
 
   -- Parser ( returns AST )
-  ast <- handleParseError $ parseModule "<stdin>" source
-
-  liftIO $ putStrLn $ show ast
+  (ast, it) <- handleParseError $ parseModule "<stdin>" source
 
   -- Type Inference ( returns Typing Environment )
   -- tyctx' <- hoistErr $ inferTop (tyctx st) mod
@@ -74,8 +72,9 @@ exec source = do
 
   -- If a value is entered, print it.
   -- This guy needs refactoring!
-  case lookup "it" ast of
-    Nothing -> liftIO $ putStrLn $ show st'
+  case it of
+    -- Nothing -> liftIO $ putStrLn $ show st'
+    Nothing -> return ()
     Just ex -> do
       let val = evalExpr tmEnv ex
       liftIO $ putStrLn $ show val
@@ -110,7 +109,6 @@ typeof arg = do
   let ctx = typeEnv st
   case TypeEnv.lookup ctx arg of
     Just val -> liftIO $ putStrLn $ show (arg, val)
-    -- Nothing  -> exec (L.pack arg)
     Nothing  -> return ()
 
 -- :quit command
@@ -150,10 +148,19 @@ shellOptions = [
 say :: String -> Repl ()
 say words = do
   liftIO $ putStrLn words >> return ()
-  -- liftIO $ callCommand $ "cowsay " <> words >> return ()
+
+asciiArt = "                                                       \n\
+  \ ________               _____                              \n\
+  \ |_   __  |             |_   _|                            \n\
+  \   | |_ \\_|.--.    .--.   | |      ,--.   _ .--.   .--./)  \n\
+  \   |  _| / .'`\ \/ .'`\ \ | |   _ `'_\\ : [ `.-. | / /'`\\;  \n\
+  \  _| |_  | \\__. || \\__. |_| |__/ |// | |, | | | | \ \._//   \n\
+  \ |_____|  '.__.'  '.__.'|________|\'-;__/[___||__].',__`   \n\
+  \                                                 ( ( __))  \n"
+
 
 shellWelcome :: Repl ()
-shellWelcome = say "Welcome to FooLang"
+shellWelcome = say asciiArt >> say "-- Welcome to FooLang"
 
 shellGoodbye :: Repl ExitDecision
 shellGoodbye = say "Bye bye" >> return Exit
