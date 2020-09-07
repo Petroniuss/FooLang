@@ -117,10 +117,40 @@ class Substitutable a where
     ftv :: a -> Set.Set TypeVar
 
     -- Replaces all occurences of free type variables with given type
+    substitute :: Subsitution -> a -> a
 
 -- TODO implement all these subsitutable
 
+instance Substitutable Type where
 
+    ftv tp = case tp of
+        TVar var   -> Set.singleton var
+
+        TCon _     -> Set.empty
+
+        TArr t1 t2 -> ftv t1 `Set.union` ftv t2
+
+    substitute subs tp = case tp of
+        TVar var -> case Map.lookup var subs of
+                        Nothing -> tp
+                        Just v  -> v
+        t@(TCon _)   -> t
+
+        t1 `TArr` t2 -> (substitute subs t1) `TArr` (substitute subs t2)
+
+
+instance Substitutable TypeScheme where
+    ftv (Forall vars tp) = ftv tp `Set.difference` Set.fromList vars
+
+    substitute subs (Forall vars tp) = Forall vars $ substitute s' tp
+                            where s' = foldr Map.delete subs vars
+
+instance Substitutable TypeEnv where
+    ftv env = foldr (Set.union . ftv) Set.empty $ Map.elems env
+
+    substitute subs env = Map.map (substitute subs) env
+
+-- Infers dumb type of given expression and generates constraints
 infer :: Expr -> Infer Type
 infer expr =
     case expr of
