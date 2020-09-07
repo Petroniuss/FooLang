@@ -73,14 +73,14 @@ exec source = do
   st@IState { typeEnv = tpEnv, termEnv = tmEnv } <- get
 
   -- Parser ( returns AST )
-  (ast, it) <- handleParseError $ parseModule "<stdin>" source
+  (ast, it) <- handleError $ parseModule "<stdin>" source
 
   -- Type Inference ( returns Typing Environment )
-  -- tyctx' <- hoistErr $ inferTop (tyctx st) mod
+  tpEnv' <- handleError $ inferModule tpEnv ast
 
   -- Create the new environment ()
   let st' = IState { termEnv = foldl' evalDef tmEnv ast
-                   , typeEnv = Map.empty
+                   , typeEnv = tpEnv'
                    }
   -- Update environment
   put st'
@@ -91,14 +91,16 @@ exec source = do
   case it of
     Nothing -> return ()
     Just ex -> do
+      -- Eval expr
       let val = evalExpr tmEnv ex
       liftIO $ render $ prettyIt val typeInt
-      -- liftIO $ putStrLn $ show $ evalInfer ex (typeEnv st')
-      liftIO $ putStrLn "fo"
+      -- Eval type
+      liftIO $ putStrLn $ show $ evalInfer ex (typeEnv st')
       return ()
 
-handleParseError :: Either ParseError a -> Repl a
-handleParseError either =
+
+handleError :: Show a => Either a b -> Repl b
+handleError either =
   case either of
     Left err -> (liftIO . print) err >> abort
     Right a  -> return a

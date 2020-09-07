@@ -21,6 +21,7 @@ import           Data.Monoid
 import           Control.Monad.Identity (Identity)
 import           Control.Monad.RWS      (RWST, ask, evalRWS, evalRWST, local,
                                          tell)
+import           Data.List              (foldl')
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
 
@@ -68,14 +69,12 @@ type Infer a = RWST TypeEnv [Constraint] [String] (Except TypeError) a
 
 -- Generating type names
 instance MonadFail Identity where
-    fail = fail
+    fail = error "pattern matching failed"
 
 freshType :: Infer Type
 freshType = do
     var <- freshTypeVar
-    tell [(TVar var, TVar var)]
     return $ TVar var
-
 
 freshTypeVar :: Infer TypeVar
 freshTypeVar = do
@@ -122,8 +121,6 @@ class Substitutable a where
     -- Replaces all occurences of free type variables with given type
     substitute :: Subsitution -> a -> a
 
--- TODO implement all these subsitutable
-
 instance Substitutable Type where
 
     ftv tp = case tp of
@@ -153,7 +150,6 @@ instance Substitutable TypeEnv where
 
     substitute subs env = Map.map (substitute subs) env
 
--- Infers dumb type of given expression and generates constraints
 infer :: Expr -> Infer Type
 infer expr =
     case expr of
@@ -216,9 +212,10 @@ opType Mul = typeInt `TArr` typeInt `TArr` typeInt
 opType Eql = typeInt `TArr` typeInt `TArr` typeBool
 
 
+-- Interface
 -- evalInfer :: Expr -> TypeEnv -> (Type, [Constraint])
 evalInfer :: Expr -> TypeEnv -> Either TypeError (Type, [Constraint])
-evalInfer expr env = runExcept $ evalRWST (infer expr) env []
+evalInfer expr env = runExcept $ evalRWST (infer expr) env inifiniteNamesSupply
 
 -- I just wanna run this guy to see what we have so far
 
@@ -227,6 +224,10 @@ evalInfer expr env = runExcept $ evalRWST (infer expr) env []
 -- type UnifierState = (Subsitution, [Constraint])
 -- type Unifier a    = StateT UnifierState (Except TypeError) a
 
-
-
+inferModule :: TypeEnv -> [(String, Expr)] -> Either TypeError TypeEnv
+inferModule env xs = foldM foo env xs
+    where
+        foo acc (name, expr) = do
+             (t, _) <- evalInfer expr acc
+             return $ extend acc name (emptyScheme t)
 
