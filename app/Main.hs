@@ -29,6 +29,8 @@ import           System.Exit
 -- import           System.Process             (callCommand)
 import           Data.Text.Prettyprint.Doc
                                                                                    (annotate,
+                                                                                   line,
+                                                                                   pretty,
                                                                                    (<+>))
 import           Data.Text.Prettyprint.Doc.Render.Text
                                                                                    (putDoc)
@@ -89,7 +91,8 @@ exec source = do
     Nothing -> return ()
     Just ex -> do
       let val = evalExpr tmEnv ex
-      liftIO $ putStrLn $ show val
+      liftIO $ render (pretty val)
+      -- liftIO $ render (prettyDecl "foo" (typeInt `TArr` typeInt))
       return ()
 
 handleParseError :: Either ParseError a -> Repl a
@@ -162,8 +165,9 @@ say :: String -> Repl ()
 say words = do
   liftIO $ putStrLn words >> return ()
 
-asciiArt = "                                                       \n\
-  \ ________               _____                              \n\
+asciiArt =
+  "                                                       \n\
+  \  ________               _____                              \n\
   \ |_   __  |             |_   _|                            \n\
   \   | |_ \\_|.--.    .--.   | |      ,--.   _ .--.   .--./)  \n\
   \   |  _| / .'`\ \/ .'`\ \ | |   _ `'_\\ : [ `.-. | / /'`\\;  \n\

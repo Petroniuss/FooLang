@@ -28,6 +28,7 @@ dependencies:
   - mtl
   - transformers
   - prettyprinter
+  - prettyprinter-ansi-terminal
   - repline   >= 0.3.0.0
   - haskeline >= 0.8.0.0
 
