@@ -15,7 +15,8 @@ import           Lang.Syntax
 import           Lang.TypeEnv
 
 
-style = color Green <> bold
+style = color Green
+-- <> bold
 
 render :: Doc AnsiStyle -> IO ()
 render doc = putDoc $ annotate style $ (doc <> line)

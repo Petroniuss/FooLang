@@ -86,13 +86,12 @@ exec source = do
 
   -- If a value is entered, print it.
   -- This guy needs refactoring!
+  -- liftIO $ putStrLn $ show $ termEnv st'
   case it of
-    -- Nothing -> liftIO $ putStrLn $ show st'
     Nothing -> return ()
     Just ex -> do
       let val = evalExpr tmEnv ex
-      liftIO $ render (pretty val)
-      -- liftIO $ render (prettyDecl "foo" (typeInt `TArr` typeInt))
+      liftIO $ render $ prettyIt val typeInt
       return ()
 
 handleParseError :: Either ParseError a -> Repl a
@@ -163,7 +162,7 @@ shellOptions = [
 
 say :: String -> Repl ()
 say words = do
-  liftIO $ putStrLn words >> return ()
+  liftIO $ render . pretty $ words
 
 asciiArt =
   "                                                       \n\

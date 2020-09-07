@@ -33,7 +33,7 @@ extendEnv :: TermEnv -> (String, Value) -> TermEnv
 extendEnv env (name, value)= Map.insert name value env
 
 -- For evaluating top level definition and binding it to specified name.
--- Returns evaluated value (which might as well be lambda expression (Vclosure)) and extended environment.
+-- Returns evaluated value (which might as well be lambda expression (VClosure)) and extended environment.
 evalDef :: TermEnv -> (String, Expr) -> TermEnv
 evalDef env (name, expr) =
   let v = evalExpr env expr
@@ -94,6 +94,11 @@ eval expr = case expr of
         case bool of
             True  -> eval trBranchE
             False -> eval flBranchE
+
+    -- We evaluate expression by applying the same expression to itself
+    -- This alone is enaugh to support recursion!
+    Fix expr -> do
+        eval $ App expr (Fix expr)
 
 -- Maps binary operation to function on values
 op :: BinOp -> (Value -> Value -> Value)
