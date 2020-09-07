@@ -19,7 +19,8 @@ import           Control.Monad.State
 import           Data.Monoid
 
 import           Control.Monad.Identity (Identity)
-import           Control.Monad.RWS      (RWST, ask, local, tell)
+import           Control.Monad.RWS      (RWST, ask, evalRWS, evalRWST, local,
+                                         tell)
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
 
@@ -42,6 +43,7 @@ data TypeError
     | Ambigious [Constraint]
     -- Duunot know :)
     | UnificationMismatch [Type] [Type]
+    deriving (Show)
 
 
 
@@ -71,6 +73,7 @@ instance MonadFail Identity where
 freshType :: Infer Type
 freshType = do
     var <- freshTypeVar
+    tell [(TVar var, TVar var)]
     return $ TVar var
 
 
@@ -206,10 +209,24 @@ infer expr =
             addConstraint (actual, expected)
             return resT
 
-
 opType :: BinOp -> Type
 opType Add = typeInt `TArr` typeInt `TArr` typeInt
 opType Sub = typeInt `TArr` typeInt `TArr` typeInt
 opType Mul = typeInt `TArr` typeInt `TArr` typeInt
 opType Eql = typeInt `TArr` typeInt `TArr` typeBool
+
+
+-- evalInfer :: Expr -> TypeEnv -> (Type, [Constraint])
+evalInfer :: Expr -> TypeEnv -> Either TypeError (Type, [Constraint])
+evalInfer expr env = runExcept $ evalRWST (infer expr) env []
+
+-- I just wanna run this guy to see what we have so far
+
+-- Constraint solver
+
+-- type UnifierState = (Subsitution, [Constraint])
+-- type Unifier a    = StateT UnifierState (Except TypeError) a
+
+
+
 

@@ -46,8 +46,9 @@ import           Text.Parsec.Error
 -- Types
 -------------------------------------------------------------------------------
 
+-- We also need fresh name supply
 data IState = IState
-  { typeEnv :: TypeEnv  -- Type environment
+  { typeEnv :: TypeEnv.TypeEnv  -- Type environment
   , termEnv :: TermEnv  -- Value environment
   } deriving (Show)
 
@@ -92,6 +93,8 @@ exec source = do
     Just ex -> do
       let val = evalExpr tmEnv ex
       liftIO $ render $ prettyIt val typeInt
+      -- liftIO $ putStrLn $ show $ evalInfer ex (typeEnv st')
+      liftIO $ putStrLn "fo"
       return ()
 
 handleParseError :: Either ParseError a -> Repl a

@@ -34,17 +34,4 @@ extend env name scheme = Map.insert name scheme env
 lookup :: TypeEnv -> String -> Maybe TypeScheme
 lookup env name = Map.lookup name env
 
--- This is how we get new name for each type variable --
-instance MonadFail Identity where
-    fail = fail
-
-freshName :: StateT [String] Identity String
-freshName = do
-    (name:others) <- get
-    put others
-    return name
-
-
-inifiniteNamesSupply :: [String]
-inifiniteNamesSupply = [1..] >>= flip replicateM ['a'..'z']
 --------------------------------------------------
