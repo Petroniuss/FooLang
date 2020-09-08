@@ -8,21 +8,23 @@ import           Data.Text.Prettyprint.Doc                 (Doc, Pretty, align,
                                                             line, pretty, sep,
                                                             vsep, (<+>))
 import           Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle,
-                                                            Color (Green), bold,
-                                                            color, putDoc)
+                                                            Color (Green, Red),
+                                                            bold, color, putDoc)
 import           Lang.Eval
 import           Lang.Syntax
 import           Lang.TypeEnv
 
 
-style = color Green
--- <> bold
+successStyle = color Green
+failureStyle = color Red <> bold
 
 render :: Doc AnsiStyle -> IO ()
-render doc = putDoc $ annotate style $ (doc <> line)
+render doc = putDoc $ annotate successStyle $ (doc <> line)
 
-prettyIt :: Value -> Type -> Doc ann
-prettyIt v tp = pretty v <+> (prettyType tp)
+renderWithStyle style doc = putDoc $ annotate style (doc <> line)
+
+prettyIt v tp =
+    (pretty v) <+> (pretty "::") <+> prettyType tp
 
 prettyDecl :: String -> Type -> Doc ann
 prettyDecl name tp = pretty name <+> (prettyType tp)
@@ -42,11 +44,11 @@ prettyNamedScheme name scheme =
 prettyScheme :: TypeScheme -> Doc ann
 prettyScheme (Forall tvars tp) =
     let d = case tvars of
-                [] -> emptyDoc
+                [] -> pretty ""
                 _  -> pretty "forall" <+>
                         (align . sep . (map pretty) $ tvars) <+>
                         pretty "=>" -- there should be dot
-        in d <+> prettyType tp
+        in d <> prettyType tp
 
 instance Pretty Value where
     pretty value = case value of
@@ -62,7 +64,7 @@ instance Pretty TypeVar where
 
 prettyType :: Type -> Doc ann
 prettyType tp = align $ sep $
-    zipWith (<+>) (pretty "::" : (repeat $ pretty "->")) (tys tp)
+    zipWith (<>) (pretty "" : (repeat $ pretty "-> ")) (tys tp)
     where
         tys :: Type -> [Doc ann]
         tys tp = case tp of

@@ -127,8 +127,10 @@ typeof arg = do
   st <- get
   let ctx = typeEnv st
       style = color Green <> bold
-  case TypeEnv.lookup ctx arg of
-    Just val -> liftIO $ putDoc ("Value" <+> (annotate style $ "Type"))
+      strip = L.unpack . L.strip . L.pack
+      arg' = strip arg
+  case TypeEnv.lookup ctx arg' of
+    Just val -> liftIO $ render $ prettyNamedScheme arg' val
     Nothing  -> return ()
 
 -- :quit command
