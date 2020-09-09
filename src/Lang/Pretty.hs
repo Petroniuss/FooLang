@@ -2,6 +2,7 @@
 {-# LANGUAGE RecordWildCards  #-}
 module Lang.Pretty where
 
+import           Control.Monad                             (replicateM)
 import           Data.Map                                  (toList)
 import           Data.Text.Prettyprint.Doc                 (Doc, Pretty, align,
                                                             annotate, emptyDoc,
@@ -124,6 +125,5 @@ prettyTypeError tpErr = case tpErr of
         pretty "Unification failed for following constraints" <+> line <> ms
             where ms = mapMismatch $ zip ts ts'
 
-    -- Maps constraints to UnificationFail
+    -- Maps not fullied constraints to TypeError
     where mapMismatch = vsep . map pretty . map (\(t1, t2) -> UnificationFail t1 t2)
-

@@ -3,6 +3,7 @@
 
 module Lang.Infer where
 
+import           Lang.Substitution
 import           Lang.Syntax
 import           Lang.TypeEnv           as TypeEnv
 
@@ -81,8 +82,8 @@ freshName = do
     put others
     return name
 
-inifiniteNamesSupply :: [String]
-inifiniteNamesSupply = [1..] >>= flip replicateM ['a'..'z']
+typeNamesSupply :: [String]
+typeNamesSupply = [1..] >>= flip replicateM ['a'..'z']
 
 ----
 
@@ -105,63 +106,6 @@ generalize tpEnv tpe = Forall vars tpe
     where vars = Set.toList $ ftv tpe `Set.difference` ftv tpEnv
 
 
-type Subsitution = Map.Map TypeVar Type
-
--- This is how we compose substitutions
-compose :: Subsitution -> Subsitution -> Subsitution
-s1 `compose` s2 = Map.map (substitute s1) s2 `Map.union` s1
-
-emptySubst :: Subsitution
-emptySubst = Map.empty
-
-extendSubst :: TypeVar -> Type -> Subsitution -> Subsitution
-extendSubst = Map.insert
-
-class Substitutable a where
-    -- Returns set of all free type variables
-    ftv :: a -> Set.Set TypeVar
-
-    -- Replaces all occurences of free type variables with given type
-    substitute :: Subsitution -> a -> a
-
-instance Substitutable Type where
-
-    ftv tp = case tp of
-        TVar var   -> Set.singleton var
-
-        TCon _     -> Set.empty
-
-        TArr t1 t2 -> ftv t1 `Set.union` ftv t2
-
-    substitute subs tp = case tp of
-        TVar var -> case Map.lookup var subs of
-                        Nothing -> tp
-                        Just v  -> v
-        t@(TCon _)   -> t
-
-        t1 `TArr` t2 -> (substitute subs t1) `TArr` (substitute subs t2)
-
-
-instance Substitutable TypeScheme where
-    ftv (Forall vars tp) = (ftv tp) `Set.difference` (Set.fromList vars)
-
-    substitute subs (Forall vars tp) = Forall vars $ substitute s' tp
-                            where s' = foldr Map.delete subs vars
-
-instance Substitutable TypeEnv where
-    ftv env = ftv $ Map.elems env
-
-    substitute subs env = Map.map (substitute subs) env
-
-instance Substitutable a => Substitutable [a] where
-    ftv xs = foldr (Set.union . ftv) Set.empty xs
-
-    substitute subs xs = substitute subs <$> xs
-
-instance (Substitutable a) => Substitutable (a, a) where
-    ftv (x, y) = (ftv x) `Set.union` (ftv y)
-
-    substitute subs (x, y) = (substitute subs x, substitute subs y)
 
 -- There are some bugs because we don't introduce new types in place of those already in env
 
@@ -246,7 +190,7 @@ opType Eql = typeInt `TArr` typeInt `TArr` typeBool
 
 -- evalInfer :: Expr -> TypeEnv -> (Type, [Constraint])
 evalInfer :: Expr -> TypeEnv -> Either TypeError (Type, [Constraint])
-evalInfer expr env = runExcept $ evalRWST (infer expr) env inifiniteNamesSupply
+evalInfer expr env = runExcept $ evalRWST (infer expr) env typeNamesSupply
 
 
 -- Constraint solver
