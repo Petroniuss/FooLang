@@ -23,8 +23,8 @@ render doc = putDoc $ annotate successStyle $ (doc <> line)
 
 renderWithStyle style doc = putDoc $ annotate style (doc <> line)
 
-prettyIt v tp =
-    (pretty v) <+> (pretty "::") <+> prettyType tp
+prettyIt v scheme =
+    (pretty v) <+> (pretty "::") <+> prettyScheme scheme
 
 prettyDecl :: String -> Type -> Doc ann
 prettyDecl name tp = pretty name <+> (prettyType tp)

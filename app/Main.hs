@@ -28,7 +28,8 @@ import           System.Environment
 import           System.Exit
 -- import           System.Process             (callCommand)
 import           Data.Text.Prettyprint.Doc
-                                                                                   (annotate,
+                                                                                   (Doc,
+                                                                                   annotate,
                                                                                    line,
                                                                                    pretty,
                                                                                    (<+>))
@@ -38,6 +39,8 @@ import           Data.Text.Prettyprint.Doc.Render.Tutorials.TreeRenderingTutoria
                                                                                    (Color (Green),
                                                                                    bold,
                                                                                    color)
+import           Prettyprinter.Render.Terminal
+                                                                                   (AnsiStyle)
 import           Text.Parsec.Error
                                                                                    (ParseError)
 
@@ -92,12 +95,16 @@ exec source = do
     Nothing -> return ()
     Just ex -> do
       -- Eval expr
+      tp <- handleError $ inferIt tpEnv' ex
+      -- This one cannot fail :)
       let val = evalExpr tmEnv ex
-      liftIO $ render $ prettyIt val typeInt
-      -- Eval type
-      liftIO $ putStrLn $ show $ evalInfer ex (typeEnv st')
-      return ()
 
+      -- Show evaluated value alongside its type
+      replRender $ prettyIt val tp
+
+
+replRender :: Doc AnsiStyle -> Repl ()
+replRender doc = liftIO $ render doc
 
 handleError :: Show a => Either a b -> Repl b
 handleError either =
