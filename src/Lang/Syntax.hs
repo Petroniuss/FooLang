@@ -5,7 +5,7 @@ module Lang.Syntax where
 ------------------------------------------------------------------------
 
 {-
-    Module defines abstract syntax tree and type system.
+    Module defines our abstract syntax tree and type system.
 
     I suppose this is the most important module.
 -}
