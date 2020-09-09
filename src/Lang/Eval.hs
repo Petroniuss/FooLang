@@ -54,10 +54,10 @@ data Value
 -- Implementation
 ----------------------------------------------------------------------
 
--- |Eval monad
+-- |Eval monad.
 type EvalT a = Reader TermEnv a
 
--- |We need that in order to perform non-exhaustive pattern matching
+-- |We need that in order to perform non-exhaustive pattern matching.
 instance MonadFail Identity where
     fail = fail
 
@@ -66,7 +66,7 @@ instance MonadFail Identity where
 eval :: Expr -> EvalT Value
 eval expr = case expr of
     -- Whenever we encounter reference to some variable x
-    -- we pull it out of the current context
+    -- we pull it out of the current context.
     (Var name) ->
         getValue name
 
@@ -74,12 +74,12 @@ eval expr = case expr of
     (Lit lit)  ->
         return $ instantiateLiteral lit
 
-    -- We create closure with current context
+    -- We create closure with current context.
     (Lam name body) -> do
         ctx <- ask
         return $ VClosure name body ctx
 
-    -- Bind name in closure to value of latter expression and evaluate first one
+    -- Bind name in closure to value of latter expression and evaluate first one.
     (App e1 e2) -> do
         VClosure name body ctx' <- eval e1
         v2 <- eval e2
@@ -92,19 +92,19 @@ eval expr = case expr of
         v2 <- eval right
         return $ f v1 v2
 
-    -- We evaluate expression in extended environement
+    -- We evaluate expression in extended environement.
     (Let argName e1 e2) -> do
         v1 <- eval e1
         inExtended argName v1 (eval e2)
 
-    -- Check predicate and evaluate either left or right branch
+    -- Check predicate and evaluate either left or right branch.
     (If predE trBranchE flBranchE) -> do
         VBool bool <- eval predE
         case bool of
             True  -> eval trBranchE
             False -> eval flBranchE
 
-    -- We evaluate expression by applying the same expression to itself
+    -- We evaluate expression by applying the same expression to itself.
     -- This alone is enaugh to support recursion!
     Fix expr -> do
         eval $ App expr (Fix expr)
