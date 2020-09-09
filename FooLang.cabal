@@ -4,16 +4,16 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5445e7ef77bc74fe4d92046dc4f7aad66dd8a1eb55e0b7f0b133983f7de7a36e
+-- hash: c1ffd931e34fe86893f7c38b7fb3296b5f9bc355a35c56c611e629dd099e3178
 
 name:           FooLang
-version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/FooLang#readme>
-homepage:       https://github.com/githubuser/FooLang#readme
-bug-reports:    https://github.com/githubuser/FooLang/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2020 Author name here
+version:        1.0.0.0
+description:    Please see the README on GitHub at <https://github.com/petroniuss/FooLang#readme>
+homepage:       https://github.com/petroniuss/FooLang#readme
+bug-reports:    https://github.com/petroniuss/FooLang/issues
+author:         Patryk Wojtyczek
+maintainer:     wojtyczekPatryk@gmail.com
+copyright:      2020 Patryk Wojtyczek
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -23,7 +23,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/FooLang
+  location: https://github.com/petroniuss/FooLang
 
 library
   exposed-modules:

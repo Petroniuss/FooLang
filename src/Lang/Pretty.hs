@@ -8,7 +8,8 @@ import           Control.Monad.Identity                    (Identity,
                                                             runIdentity)
 import           Control.Monad.Trans.State                 (StateT, evalStateT,
                                                             get, put)
-import           Data.Map                                  (toList)
+import qualified Data.Map                                  as Map
+import qualified Data.Set                                  as Set
 import           Data.Text.Prettyprint.Doc                 (Doc, Pretty, align,
                                                             annotate, emptyDoc,
                                                             line, pretty, sep,
@@ -54,7 +55,7 @@ prettyEnv :: TypeEnv -> Doc ann
 prettyEnv env =
     vsep docs
     where
-        docs = map mapper $ toList env
+        docs = map mapper $ Map.toList env
         mapper ((name, scheme)) = prettyNamedScheme name scheme
 
 prettyNamedScheme :: String -> TypeScheme -> Doc ann
@@ -67,25 +68,23 @@ prettyNamedScheme name scheme =
 prettyScheme :: TypeScheme -> Doc ann
 prettyScheme schema =
     let (Forall tvars tp) = freshSchema schema
-        d = case tvars of
+        d = case (tvars) of
                 [] -> pretty ""
                 _  -> pretty "forall" <+>
-                        (align . sep . (map pretty) $ tvars) <+>
+                        (align . sep . (map pretty) $ reverse tvars) <+>
                         pretty "=> "
         in d <> prettyType tp
 
---
-name :: StateT [String] Identity Type
+name :: StateT [String] Identity TypeVar
 name = do
     (x:xs) <- get
     put xs
-    return $ TVar $ TypeVar $ x
+    return $ TypeVar $ x
 
 freshSchema :: TypeScheme -> TypeScheme
 freshSchema (Forall vars tp) =
     let
-        subst = freshVars vars
-        vars' = keys subst
+        (subst, vars') = freshVars vars
         tp' = substitute subst tp
         in Forall vars' tp'
 
@@ -93,10 +92,11 @@ alphabet = [1..] >>= flip replicateM ['a'..'z']
 
 freshVars vars =
     runIdentity $ flip evalStateT alphabet $
-        foldM (\acc e -> do
-            tp <- name
-            return $ extendSubst e tp acc)
-            emptySubst vars
+        foldM (\(subst, vars) e -> do
+            var <- name
+            let tp = TVar var
+            return $ (extendSubst e tp subst, var : vars))
+            (emptySubst, []) vars
 
 
 instance Pretty Value where
