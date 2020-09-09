@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Lang.Infer where
+module Lang.TypeInference.Infer where
 
 import           Lang.Substitution
 import           Lang.Syntax
@@ -21,6 +21,8 @@ import qualified Data.Map               as Map
 import qualified Data.Set               as Set
 import           Lang.Utils.Util
 
+-- Todo refactor this guy -> possibly break it down into 3 smaller modules:
+--
 
 -- We're going to collect set of constraints from our ast and
 -- then apply substiutions as specified in algorithm which will yield our final
@@ -40,7 +42,6 @@ data TypeError
     | Ambigious [Constraint]
     -- Duunot know :)
     | UnificationMismatch [Type] [Type]
-    deriving (Show)
 
 
 type Constraint = (Type, Type)

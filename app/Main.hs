@@ -4,11 +4,11 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 import           Lang.Eval
-import           Lang.Infer
 import           Lang.Parser
 import           Lang.Pretty
 import           Lang.Syntax
 import qualified Lang.TypeEnv                          as TypeEnv
+import           Lang.TypeInference.Infer
 
 import qualified Data.Map                              as Map
 import           Data.Monoid

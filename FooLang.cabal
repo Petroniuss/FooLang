@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a65730a483f1ae20dca447e06ad7c6938250ab23b2f3912ac1b5b9454c3e45b5
+-- hash: 5445e7ef77bc74fe4d92046dc4f7aad66dd8a1eb55e0b7f0b133983f7de7a36e
 
 name:           FooLang
 version:        0.1.0.0
@@ -28,13 +28,15 @@ source-repository head
 library
   exposed-modules:
       Lang.Eval
-      Lang.Infer
       Lang.Lexer
       Lang.Parser
       Lang.Pretty
       Lang.Substitution
       Lang.Syntax
       Lang.TypeEnv
+      Lang.TypeInference.ConstraintSolver
+      Lang.TypeInference.ConstraintWriter
+      Lang.TypeInference.Infer
       Lang.Utils.Util
   other-modules:
       Paths_FooLang
