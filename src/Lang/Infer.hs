@@ -250,7 +250,7 @@ unify :: Type -> Type -> ConstraintSolver SolverState
 unify t1 t2                           | t1 == t2 = return (emptySubst, [])
 unify (TVar x) t                      = x `bind` t
 unify t (TVar x)                      = x `bind` t
-unify (t1 `TArr` t2) (t1' `TArr` t2') = unifyMany [t1, t2] [t1', t2']
+unify (t1 `TArr` t2) (t1' `TArr` t2') = unifyMany [t1, t1'] [t2, t2']
 unify t1 t2                           = throwError $ UnificationFail t1 t2
 
 unifyMany :: [Type] -> [Type] -> ConstraintSolver SolverState

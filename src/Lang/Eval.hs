@@ -4,12 +4,16 @@ module Lang.Eval (
     evalExpr,
     evalDef,
     emptyTermEnv
-)
-where
+) where
 
 ------------------------------------------------------------------------
 --              Well-typed program cannot go wrong                    --
 ------------------------------------------------------------------------
+
+{-
+    This module is responsible for evaluating expressions (ast) and
+    binding names values in updated typing environment.
+-}
 
 import qualified Data.Map               as Map
 
@@ -25,16 +29,17 @@ type TermEnv = Map.Map String Value
 emptyTermEnv :: TermEnv
 emptyTermEnv = Map.empty
 
--- Evaluate expression within passed environment
+-- |Evaluate expression within passed environment.
 evalExpr :: TermEnv -> Expr -> Value
 evalExpr = flip $ runReader . eval
 
--- For evaluating top level definition and binding it to specified name.
+-- |For evaluating top level definition and binding it to specified name.
 evalDef :: TermEnv -> (String, Expr) -> TermEnv
 evalDef env (name, expr) =
   let v = evalExpr env expr
     in extendEnv env (name, v)
 
+-- |Every typechecked expression evaluates to a value.
 data Value
     = VInt Integer
     | VBool Bool
@@ -43,13 +48,15 @@ data Value
 
 ----------------------------------------------------------------------
 
--- Eval monad
+-- |Eval monad
 type EvalT a = Reader TermEnv a
 
--- We need that in order to perform non-exhaustive pattern matching
+-- |We need that in order to perform non-exhaustive pattern matching
 instance MonadFail Identity where
     fail = fail
 
+-- |Behold evaluation logic ->
+--      Quite simple since we know that well-typed program cannot go wrong.
 eval :: Expr -> EvalT Value
 eval expr = case expr of
     -- Whenever we encounter reference to some variable x
@@ -96,7 +103,7 @@ eval expr = case expr of
     Fix expr -> do
         eval $ App expr (Fix expr)
 
--- Maps binary operation to function on values
+-- |Maps binary operation to function on values
 op :: BinOp -> (Value -> Value -> Value)
 op binop = case binop of
     Add -> plus
@@ -114,24 +121,24 @@ op binop = case binop of
 
         eql = liftIntOp (==) VBool
 
--- Maps Literal to Value
+-- |Maps Literal to Value
 instantiateLiteral :: Literal -> Value
 instantiateLiteral (LInt i)  = VInt i
 instantiateLiteral (LBool b) = VBool b
 
--- Pulls value out of the eval context by name
+-- |Pulls value out of the eval context by name
 getValue :: String -> EvalT Value
 getValue name = ask >>= return . (flip (Map.!)) name
 
--- Execute action in current environment extend by key-value pair
+-- |Execute action in current environment extend by key-value pair
 inExtended :: String -> Value -> EvalT a -> EvalT a
 inExtended name val = local (Map.insert name val)
 
--- Execute action in given environement extend by key-value pair
+-- |Execute action in given environement extend by key-value pair
 inModified :: TermEnv -> String -> Value -> EvalT a -> EvalT a
 inModified ctx' name value action =
     local (\_ -> Map.insert name value ctx') action
 
--- Bind name to value and return modified environment
+-- |Bind name to value and return modified environment
 extendEnv :: TermEnv -> (String, Value) -> TermEnv
 extendEnv env (name, value)= Map.insert name value env
