@@ -42,21 +42,6 @@ data TypeError
     deriving (Show)
 
 
-
--- type Infer a = ExceptT TypeError (NamesSupply) a
-
----------------- Substitution --------------------
--- type Subst = Map.Map TVar Type
-
--- Unifying
--- Unify (TypeVar alpha) with (Type a) -> Subst [alpha -> a]
--- BUT: alpha cannot occur free in a bcs if it did we'd construct an infnite type:
--- Example:
---      (TypeVar "a1") `unify` (Type $ (TVar (TypeVar "a1") `TArr` (TVar (TypeVar "a2"))))
--- If we were to use our (Uni-VarLeft) rule we'd construct infinite type.
-
--------------------------------------------------
-
 type Constraint = (Type, Type)
 
 -- We generate constraints using stateful generation of new names

@@ -1,33 +1,45 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Lang.Substitution where
 
--- Maybe we should have a separate module for substitution
 import qualified Data.Map     as Map
 import qualified Data.Set     as Set
 import           Lang.Syntax
 import           Lang.TypeEnv
 
+------------------------------------------------------------------------
+--              Substitution
+------------------------------------------------------------------------
+
+{-
+    Subsitution is a map from type variables to types.
+
+    This module holds logic for:
+        - extracting free type variables from a structure
+        - substituting over structure
+-}
+
 type Subsitution = Map.Map TypeVar Type
 
--- This is how we compose substitutions
+-- |This is very useful for solving constraints and merging resulting substitutions.
 compose :: Subsitution -> Subsitution -> Subsitution
 s1 `compose` s2 = Map.map (substitute s1) s2 `Map.union` s1
 
 emptySubst :: Subsitution
 emptySubst = Map.empty
 
+-- |Adds another mapping to substitution.
 extendSubst :: TypeVar -> Type -> Subsitution -> Subsitution
 extendSubst = Map.insert
 
 class Substitutable a where
-    -- Returns set of all free type variables
+    -- |Returns set of all free type variables.
     ftv :: a -> Set.Set TypeVar
 
-    -- Replaces all occurences of free type variables with given type
+    -- |Replaces all occurences of free type variables with type,
+    --  according to supplied substitution.
     substitute :: Subsitution -> a -> a
 
 instance Substitutable Type where
-
     ftv tp = case tp of
         TVar var   -> Set.singleton var
 
@@ -64,3 +76,6 @@ instance (Substitutable a) => Substitutable (a, a) where
     ftv (x, y) = (ftv x) `Set.union` (ftv y)
 
     substitute subs (x, y) = (substitute subs x, substitute subs y)
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
