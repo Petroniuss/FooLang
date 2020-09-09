@@ -14,7 +14,7 @@ module Lang.Eval (
     This module is responsible for evaluating expressions (ast) and
     binding names to values in updated typing environment.
 
-    Inidentally, it also defines what we understand as a value :)
+    Incidentally, it also defines what we understand as a value :)
 -}
 
 import qualified Data.Map               as Map
