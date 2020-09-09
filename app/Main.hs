@@ -8,39 +8,29 @@ import           Lang.Infer
 import           Lang.Parser
 import           Lang.Pretty
 import           Lang.Syntax
-import qualified Lang.TypeEnv                                                     as TypeEnv
+import qualified Lang.TypeEnv                          as TypeEnv
 
-import qualified Data.Map                                                         as Map
+import qualified Data.Map                              as Map
 import           Data.Monoid
-import qualified Data.Text.Lazy                                                   as T
-import qualified Data.Text.Lazy.IO                                                as T
+import qualified Data.Text.Lazy                        as T
+import qualified Data.Text.Lazy.IO                     as T
 
 import           Control.Monad.Identity
 import           Control.Monad.State.Strict
 
-import           Data.List
-                                                                                   (foldl',
-                                                                                   isPrefixOf)
+import           Control.Arrow                         (left)
+import           Data.List                             (foldl', isPrefixOf)
 
+import           Data.Text.Prettyprint.Doc             (Doc, Pretty (pretty),
+                                                        (<+>))
+
+import           Data.Text.Prettyprint.Doc.Render.Text (putDoc)
+import           Prettyprinter.Render.Terminal         (AnsiStyle)
 import           System.Console.Haskeline
 import           System.Console.Repline
 import           System.Environment
 import           System.Exit
--- import           System.Process             (callCommand)
-import           Data.Text.Prettyprint.Doc
-                                                                                   (Doc,
-                                                                                   Pretty (pretty),
-                                                                                   (<+>))
-import           Data.Text.Prettyprint.Doc.Render.Text
-                                                                                   (putDoc)
-import           Data.Text.Prettyprint.Doc.Render.Tutorials.TreeRenderingTutorial
-                                                                                   (Color (Green),
-                                                                                   bold,
-                                                                                   color)
-import           Prettyprinter.Render.Terminal
-                                                                                   (AnsiStyle)
-import           Text.Parsec.Error
-                                                                                   (ParseError)
+import           Text.Parsec.Error                     (ParseError)
 
 
 -------------------------------------------------------------------------------
@@ -73,10 +63,10 @@ exec source = do
   ShellState { typeEnv = tpEnv, termEnv = tmEnv } <- get
 
   -- Parser ( returns AST )
-  (ast, it) <- handleError $ parseModule "<stdin>" source
+  (ast, it) <- handleParseError $ parseModule "<stdin>" source
 
   -- Type Inference ( returns Typing Environment )
-  tpEnv' <- handleError $ inferModule tpEnv ast
+  tpEnv' <- handleTypeError $ inferModule tpEnv ast
 
   -- Create updated environment
   let st' = ShellState { termEnv = foldl' evalDef tmEnv ast
@@ -84,7 +74,7 @@ exec source = do
   -- Update environment
   put st'
 
-  -- If a value is entered, evaluate and print it.
+  -- If a value is entered then typecheck, evaluate and print it.
   case it of
     Nothing -> return ()
     Just ex -> do
@@ -104,18 +94,21 @@ replSuccess doc = liftIO $ renderSuccess doc
 replFailure :: Doc AnsiStyle -> Repl ()
 replFailure doc = liftIO $ renderFailure doc
 
+-- -------------------------------------------------------------------------------
+-- -- Errors
+-- -------------------------------------------------------------------------------
 
-handleError :: Show a => Either a b -> Repl b
-handleError either =
-  case either of
-    Left err -> (replFailure . pretty . show) err >> abort
-    Right a  -> return a
+handleParseError :: Either ParseError b -> Repl b
+handleParseError = handleErrorPretty . (left show)
 
 handleTypeError :: Either TypeError a -> Repl a
-handleTypeError either =
+handleTypeError = handleErrorPretty
+
+handleErrorPretty :: Pretty a => Either a b -> Repl b
+handleErrorPretty either =
   case either of
-    Left typeErr -> (replFailure . pretty) typeErr >> abort
-    Right a      -> return a
+    Left err -> (replFailure . pretty) err >> abort
+    Right a  -> return a
 
 -- -------------------------------------------------------------------------------
 -- -- Commands
@@ -149,16 +142,28 @@ quit :: a -> Repl ()
 quit _ = liftIO $ exitSuccess
 
 -- -------------------------------------------------------------------------------
--- -- Interactive Shell
+-- Shell
 -- -------------------------------------------------------------------------------
 
--- Prefix tab completer
+shell :: Repl a -> IO ()
+shell action =
+  (flip evalStateT) initState $
+  evalReplOpts $ ReplOpts {
+    banner = shellBanner,
+    command = shellAction,
+    options = shellOptions,
+    prefix  = Just ':',
+    multilineCommand = Just "paste",
+    tabComplete = shellCompleter,
+    initialiser = shellWelcome >> action >> return (),
+    finaliser = shellGoodbye
+  }
+
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
 defaultMatcher = [
     (":load"  , fileCompleter)
   ]
 
--- Default tab completer
 comp :: (Monad m, MonadState ShellState m) => WordCompleter m
 comp n = do
   ctx <- get
@@ -207,27 +212,8 @@ shellBanner MultiLine  = pure "| "
 shellAction :: String -> Repl ()
 shellAction source = exec (T.pack source)
 
--- -------------------------------------------------------------------------------
--- -- Entry Point
--- -------------------------------------------------------------------------------
-
-
-shell :: Repl a -> IO ()
-shell action =
-  (flip evalStateT) initState $
-  evalReplOpts $ ReplOpts {
-    banner = shellBanner,
-    command = shellAction,
-    options = shellOptions,
-    prefix  = Just ':',
-    multilineCommand = Just "paste",
-    tabComplete = shellCompleter,
-    initialiser = shellWelcome >> action >> return (),
-    finaliser = shellGoodbye
-  }
-
 -----------------------------------------------------------------------------
--- Toplevel
+-- Main
 -- -------------------------------------------------------------------------------
 
 main :: IO ()
