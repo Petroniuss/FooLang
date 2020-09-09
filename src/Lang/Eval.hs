@@ -109,7 +109,7 @@ eval expr = case expr of
     Fix expr -> do
         eval $ App expr (Fix expr)
 
--- |Maps binary operation to function on values
+-- |Maps binary operation to function on values.
 op :: BinOp -> (Value -> Value -> Value)
 op binop = case binop of
     Add -> plus
@@ -127,25 +127,25 @@ op binop = case binop of
 
         eql = liftIntOp (==) VBool
 
--- |Maps Literal to Value
+-- |Maps Literal to Value.
 instantiateLiteral :: Literal -> Value
 instantiateLiteral (LInt i)  = VInt i
 instantiateLiteral (LBool b) = VBool b
 
--- |Pulls value out of the eval context by name
+-- |Pulls value out of the eval context by name.
 getValue :: String -> EvalT Value
 getValue name = ask >>= return . (flip (Map.!)) name
 
--- |Execute action in current environment extend by key-value pair
+-- |Execute action in current environment extend by key-value pair.
 inExtended :: String -> Value -> EvalT a -> EvalT a
 inExtended name val = local (Map.insert name val)
 
--- |Execute action in given environement extend by key-value pair
+-- |Execute action in given environement extend by key-value pair.
 inModified :: TermEnv -> String -> Value -> EvalT a -> EvalT a
 inModified ctx' name value action =
     local (\_ -> Map.insert name value ctx') action
 
--- |Bind name to value and return modified environment
+-- |Bind name to value and return modified environment.
 extendEnv :: TermEnv -> (String, Value) -> TermEnv
 extendEnv env (name, value)= Map.insert name value env
 
