@@ -189,7 +189,6 @@ infer expr =
             env <- ask
             case TypeEnv.lookup env name of
                 Nothing     -> throwError $ UnboundVariable name
-                -- Here we should proobably instantiate this tpe with fresh type foreach typevar there
                 Just schema -> instantiateSchema schema
 
         App e1 e2 -> do
