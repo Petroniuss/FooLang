@@ -11,20 +11,35 @@ import           Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle,
                                                             Color (Green, Red),
                                                             bold, color, putDoc)
 import           Lang.Eval
+import           Lang.Infer
 import           Lang.Syntax
 import           Lang.TypeEnv
 
 
+successStyle :: AnsiStyle
 successStyle = color Green
+
+failureStyle :: AnsiStyle
 failureStyle = color Red <> bold
 
-render :: Doc AnsiStyle -> IO ()
-render doc = putDoc $ annotate successStyle $ (doc <> line)
+renderFailure :: Doc AnsiStyle -> IO ()
+renderFailure doc = renderWithStyle  failureStyle doc
 
+renderSuccess :: Doc AnsiStyle -> IO ()
+renderSuccess doc = renderWithStyle successStyle doc
+
+renderWithStyle :: AnsiStyle -> Doc AnsiStyle -> IO ()
 renderWithStyle style doc = putDoc $ annotate style (doc <> line)
 
+prettyIt :: Pretty a => a -> TypeScheme -> Doc ann
 prettyIt v scheme =
     (pretty v) <+> (pretty "::") <+> prettyScheme scheme
+
+prettyDefNotFound :: String -> Doc ann
+prettyDefNotFound name =
+    pretty ("Definition `":: String) <+>
+    pretty name <+>
+    pretty ("` not found" :: String)
 
 prettyDecl :: String -> Type -> Doc ann
 prettyDecl name tp = pretty name <+> (prettyType tp)
@@ -61,6 +76,15 @@ instance Pretty Value where
 instance Pretty TypeVar where
     pretty (TypeVar s) = pretty s
 
+instance Pretty Type where
+    pretty = prettyType
+
+instance Pretty TypeScheme where
+    pretty = prettyScheme
+
+instance Pretty TypeError where
+    pretty = prettyTypeError
+
 
 prettyType :: Type -> Doc ann
 prettyType tp = align $ sep $
@@ -74,3 +98,21 @@ prettyType tp = align $ sep $
 
                 TArr t1 t2       -> tys t1 ++ tys t2
 
+
+prettyTypeError :: TypeError -> Doc ann
+prettyTypeError tpErr = case tpErr of
+    UnboundVariable name -> pretty $ "Variable `" <> name <> "` is unbound."
+
+    UnificationFail t1 t2 -> pretty "Type mismatch" <> line <+>
+                                pretty t1 <> line <>
+                                pretty "     with" <> line <+>
+                                pretty t2
+
+    InifiniteType (TypeVar name) t ->
+        pretty "Infinite type: subsituting " <+>
+        pretty t <+> pretty "for" <+> pretty t <+>
+        pretty "would result in an infinite type"
+
+    Ambigious _ -> pretty "There is no unique solution for this set of constraints"
+
+    UnificationMismatch _ _ -> pretty "Unification failed ..."

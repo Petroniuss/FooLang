@@ -2,12 +2,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module Lang.Infer where
-    -- ( Constraint
-    -- , TypeError(..)
-    -- , Subst(..)
-    -- , inferTop
-    -- , constraintsExpr
-    -- )
 
 import           Lang.Syntax
 import           Lang.TypeEnv           as TypeEnv
@@ -147,7 +141,7 @@ instance Substitutable Type where
 
 
 instance Substitutable TypeScheme where
-    ftv (Forall vars tp) = ftv tp `Set.difference` Set.fromList vars
+    ftv (Forall vars tp) = (ftv tp) `Set.difference` (Set.fromList vars)
 
     substitute subs (Forall vars tp) = Forall vars $ substitute s' tp
                             where s' = foldr Map.delete subs vars

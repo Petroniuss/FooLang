@@ -29,11 +29,7 @@ emptyTermEnv = Map.empty
 evalExpr :: TermEnv -> Expr -> Value
 evalExpr = flip $ runReader . eval
 
-extendEnv :: TermEnv -> (String, Value) -> TermEnv
-extendEnv env (name, value)= Map.insert name value env
-
 -- For evaluating top level definition and binding it to specified name.
--- Returns evaluated value (which might as well be lambda expression (VClosure)) and extended environment.
 evalDef :: TermEnv -> (String, Expr) -> TermEnv
 evalDef env (name, expr) =
   let v = evalExpr env expr
@@ -135,3 +131,7 @@ inExtended name val = local (Map.insert name val)
 inModified :: TermEnv -> String -> Value -> EvalT a -> EvalT a
 inModified ctx' name value action =
     local (\_ -> Map.insert name value ctx') action
+
+-- Bind name to value and return modified environment
+extendEnv :: TermEnv -> (String, Value) -> TermEnv
+extendEnv env (name, value)= Map.insert name value env

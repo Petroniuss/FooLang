@@ -28,7 +28,7 @@ newtype TypeVar = TypeVar String
     deriving (Eq, Show, Ord)
 
 data Type
-    = TVar TypeVar      -- Type variable
+    = TVar TypeVar      -- Type variable - polymorphic types
     | TCon String       -- Ground type
     | TArr Type Type    -- Function type
     deriving (Eq, Show, Ord)
