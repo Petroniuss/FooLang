@@ -1,15 +1,27 @@
 module Lang.Syntax where
 
----------------------- Syntax -------------------------------------
+------------------------------------------------------------------------
+--              Syntax for FooLang
+------------------------------------------------------------------------
+
+{-
+    Module defines abstract syntax tree and type system.
+
+    I suppose this is the most important module.
+-}
+
+------------------------------------------------------------------------
+-- Syntax
+------------------------------------------------------------------------
 
 data Expr
-    = Var String
+    = Var { id :: String }
     | App Expr Expr
-    | Lam String Expr
-    | Let String Expr Expr
+    | Lam { arg :: String, body :: Expr }
+    | Let { letName :: String, letExpr :: Expr, inExpr :: Expr }
     | Lit Literal
-    | If Expr Expr Expr
-    | Fix Expr
+    | If { cond :: Expr, trueBranch :: Expr, falseBranch :: Expr }
+    | Fix Expr -- Recursion!
     | Op BinOp Expr Expr
     deriving (Show, Eq, Ord)
 
@@ -21,7 +33,9 @@ data Literal
 data BinOp = Add | Sub | Mul | Eql
     deriving (Eq, Ord, Show)
 
----------------------- Types -------------------------------------
+------------------------------------------------------------------------
+-- Types
+------------------------------------------------------------------------
 
 -- Type variable example: a
 newtype TypeVar = TypeVar String
@@ -35,10 +49,13 @@ data Type
 
 infixr `TArr`
 
--- Example: forall a b. a -> b -> Int
+-- Example: forall a b => a -> b -> Int
 data TypeScheme = Forall [TypeVar] Type
     deriving (Eq, Show, Ord)
 
 -- Ground types
 typeInt = TCon "Int"
 typeBool = TCon "Bool"
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
