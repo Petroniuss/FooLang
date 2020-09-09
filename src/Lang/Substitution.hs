@@ -64,10 +64,7 @@ instance Substitutable TypeScheme where
 
     substitute subs (Forall vars tp) =
                             Forall vars $ substitute s' tp
-                            -- where s' = foldr Map.delete subs vars
-                            where s' = subs
-                                -- vars' = map (substitute subs) vars
-
+                            where s' = foldr Map.delete subs vars
 
 
 instance Substitutable TypeEnv where

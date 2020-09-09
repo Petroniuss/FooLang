@@ -8,6 +8,14 @@ import qualified Text.Parsec.Token     as Tok
 
 import           Data.Functor.Identity
 
+------------------------------------------------------------------------
+--              Lexer
+------------------------------------------------------------------------
+
+{-
+    Module containing necessary machinery for Parser.
+-}
+
 type Op a = Ex.Operator L.Text () Identity a
 type Operators a = Ex.OperatorTable L.Text () Identity a
 
@@ -71,3 +79,6 @@ contents p = do
   r <- p
   eof
   return r
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------

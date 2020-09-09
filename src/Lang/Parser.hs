@@ -18,6 +18,42 @@ import           Lang.Syntax
 import           Text.ParserCombinators.Parsec.Error (Message (Message),
                                                       addErrorMessage)
 
+------------------------------------------------------------------------
+--              Parser -- based on parsec
+------------------------------------------------------------------------
+
+{-
+    Module responsible for parsing input (L.Text) and producing either ParseError or [Ast].
+
+    If you are careful enaugh you will see that we have ciruclar between combinators..
+    But as this is lazy haskell it is completelty leigit!
+-}
+
+------------------------------------------------------------------------
+-- Interface
+------------------------------------------------------------------------
+
+type AST = ([(String, Expr)], Maybe Expr)
+
+parseExpr :: L.Text -> Either ParseError Expr
+parseExpr input = parse (contents expr) "<stdin>" input
+
+
+parseModule ::  FilePath -> L.Text -> Either ParseError AST
+parseModule fname input = prepare <$> parse (contents modl) fname input
+  where
+  prepare :: [Binding] -> AST
+  prepare xs =
+    let its = filter ((==valId) . fst) xs
+        others = filter ((/= valId) . fst) xs in
+      case (reverse its) of
+        []       -> (others, Nothing)
+        (last:_) -> (others, (Just . snd) last)
+
+------------------------------------------------------------------------
+-- Implementation
+------------------------------------------------------------------------
+
 integer :: Parser Integer
 integer = Tok.integer lexer
 
@@ -34,12 +70,6 @@ number = do
 bool :: Parser Expr
 bool = (reserved "True" >> return (Lit (LBool True)))
     <|> (reserved "False" >> return (Lit (LBool False)))
-
-fix :: Parser Expr
-fix = do
-  reservedOp "fix"
-  x <- expr
-  return (Fix x)
 
 lambda :: Parser Expr
 lambda = do
@@ -80,15 +110,12 @@ ifthen = do
   fl <- expr
   return (If cond tr fl)
 
--- If you are careful enaugh you will see that we have ciruclar dependencies..
--- But as this is lazy haskell it is completelty leigit!
 term :: Parser Expr
 term =
   try $ parens expr
   <|> try bool
   <|> try number
   <|> try ifthen
-  <|> try fix
   <|> try letrecin
   <|> try letin
   <|> try lambda
@@ -112,9 +139,10 @@ table = [
     ]
   ]
 
--- In case this looks confusing:
--- Parse expression and if it's possible to parse more expressions fold over them yielding tree of applications
--- else return parsed expr
+-- |In case this looks confusing:
+-- Parse expression and if it's possible to parse more expressions,
+-- fold over them yielding tree of applications
+-- else return parsed expr.
 expr :: Parser Expr
 expr = do
   x <- Ex.buildExpressionParser table term
@@ -165,18 +193,6 @@ top = do
 modl ::  Parser [Binding]
 modl = many top
 
-parseExpr :: L.Text -> Either ParseError Expr
-parseExpr input = parse (contents expr) "<stdin>" input
 
-type AST = ([(String, Expr)], Maybe Expr)
-
-parseModule ::  FilePath -> L.Text -> Either ParseError AST
-parseModule fname input = prepare <$> parse (contents modl) fname input
-  where
-  prepare :: [Binding] -> AST
-  prepare xs =
-    let its = filter ((==valId) . fst) xs
-        others = filter ((/= valId) . fst) xs in
-      case (reverse its) of
-        []       -> (others, Nothing)
-        (last:_) -> (others, (Just . snd) last)
+------------------------------------------------------------------------
+------------------------------------------------------------------------
