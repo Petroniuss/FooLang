@@ -7,8 +7,7 @@ import           Data.Text.Prettyprint.Doc                 (Doc, Pretty, align,
                                                             annotate, emptyDoc,
                                                             line, pretty, sep,
                                                             vsep, (<+>))
-import           Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle,
-                                                            Color (Green, Red),
+import           Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle, Color (Blue, Green, Red),
                                                             bold, color, putDoc)
 import           Lang.Eval
 import           Lang.Infer
@@ -17,7 +16,7 @@ import           Lang.TypeEnv
 
 
 successStyle :: AnsiStyle
-successStyle = color Green
+successStyle = color Blue
 
 failureStyle :: AnsiStyle
 failureStyle = color Red <> bold
@@ -37,8 +36,8 @@ prettyIt v scheme =
 
 prettyDefNotFound :: String -> Doc ann
 prettyDefNotFound name =
-    pretty ("Definition `":: String) <+>
-    pretty name <+>
+    pretty ("Definition `":: String) <>
+    pretty name <>
     pretty ("` not found" :: String)
 
 prettyDecl :: String -> Type -> Doc ann

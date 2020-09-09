@@ -250,7 +250,7 @@ unify :: Type -> Type -> ConstraintSolver SolverState
 unify t1 t2                           | t1 == t2 = return (emptySubst, [])
 unify (TVar x) t                      = x `bind` t
 unify t (TVar x)                      = x `bind` t
-unify (t1 `TArr` t2) (t1' `TArr` t2') = unifyMany [t1, t1'] [t2, t2']
+unify (t1 `TArr` t2) (t1' `TArr` t2') = unifyMany [t1, t2] [t1', t2']
 unify t1 t2                           = throwError $ UnificationFail t1 t2
 
 unifyMany :: [Type] -> [Type] -> ConstraintSolver SolverState
@@ -276,17 +276,17 @@ runSolve cs = runExcept $ evalStateT solve (emptySubst, cs)
 
 inferIt :: TypeEnv -> Expr -> Either TypeError TypeScheme
 inferIt env expr = do
-             (t, cs) <- evalInfer expr env
-             subs    <- runSolve cs
-             let t' = substitute subs t
-             return $ generalize env t'
+    (t, cs) <- evalInfer expr env
+    subs    <- runSolve cs
+    let t' = substitute subs t
+    return $ generalize env t'
 
 inferDecl :: TypeEnv -> (String, Expr) -> Either TypeError TypeEnv
 inferDecl env (name, expr) = do
-             (t, cs) <- evalInfer expr env
-             subs    <- runSolve cs
-             let t' = substitute subs t
-             return $ extend env name $ generalize env t'
+    (t, cs) <- evalInfer expr env
+    subs    <- runSolve cs
+    let t' = substitute subs t
+    return $ extend env name $ generalize env t'
 
 inferModule :: TypeEnv -> [(String, Expr)] -> Either TypeError TypeEnv
 inferModule env xs = foldM inferDecl env xs
