@@ -47,7 +47,7 @@ prettyScheme (Forall tvars tp) =
                 [] -> pretty ""
                 _  -> pretty "forall" <+>
                         (align . sep . (map pretty) $ tvars) <+>
-                        pretty "=>" -- there should be dot
+                        pretty "=> "
         in d <> prettyType tp
 
 instance Pretty Value where

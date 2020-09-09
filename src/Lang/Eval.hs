@@ -40,7 +40,7 @@ evalDef env (name, expr) =
     in extendEnv env (name, v)
 
 data Value
-    = VInt Int
+    = VInt Integer
     | VBool Bool
     | VClosure { argName :: String, body :: Expr, ctx :: TermEnv }
     deriving (Eq, Ord, Show)
@@ -120,7 +120,7 @@ op binop = case binop of
 
 -- Maps Literal to Value
 instantiateLiteral :: Literal -> Value
-instantiateLiteral (LInt i)  = VInt . fromIntegral $ i
+instantiateLiteral (LInt i)  = VInt i
 instantiateLiteral (LBool b) = VBool b
 
 -- Pulls value out of the eval context by name

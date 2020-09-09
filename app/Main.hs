@@ -90,7 +90,6 @@ exec source = do
 
   -- If a value is entered, print it.
   -- This guy needs refactoring!
-  -- liftIO $ putStrLn $ show $ termEnv st'
   case it of
     Nothing -> return ()
     Just ex -> do
@@ -119,8 +118,9 @@ handleError either =
 -- :browse command
 browse :: String -> Repl ()
 browse _ = do
-  st <- get
-  liftIO $ mapM_ putStrLn $ [show (typeEnv st)]
+  IState { typeEnv = tpEnv } <- get
+
+  liftIO $ render (prettyEnv tpEnv)
 
 -- :load command
 load :: String -> Repl ()
