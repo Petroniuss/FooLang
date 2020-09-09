@@ -10,10 +10,17 @@ import qualified Data.Map               as Map
 import           Data.List              (foldl')
 import           Lang.Syntax
 
--- Our typing environment is simply wrapper over map
---    Expression identifier to its type scheme:
---      forall []   . Int -> Int
---      forall ["a"]. a -> Int
+------------------------------------------------------------------------
+--              Typing Environment
+------------------------------------------------------------------------
+
+{-
+    Our typing environment is simply wrapper over map from
+        Expression identifier to its type schema:
+        - forall []    => Int -> Int
+        - forall ["a"] => a -> Int
+-}
+
 type TypeEnv = Map.Map String TypeScheme
 
 emptyTypeEnv :: TypeEnv
@@ -34,4 +41,5 @@ extend env name scheme = Map.insert name scheme env
 lookup :: TypeEnv -> String -> Maybe TypeScheme
 lookup env name = Map.lookup name env
 
---------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
