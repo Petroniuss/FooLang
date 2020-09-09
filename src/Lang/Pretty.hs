@@ -101,18 +101,29 @@ prettyType tp = align $ sep $
 
 prettyTypeError :: TypeError -> Doc ann
 prettyTypeError tpErr = case tpErr of
-    UnboundVariable name -> pretty $ "Variable `" <> name <> "` is unbound."
+    UnboundVariable name ->
+        pretty $ "Variable `" <> name <> "` is unbound."
 
-    UnificationFail t1 t2 -> pretty "Type mismatch" <> line <+>
-                                pretty t1 <> line <>
-                                pretty "     with" <> line <+>
-                                pretty t2
+    UnificationFail t1 t2 ->
+        pretty "Type mismatch" <> line <+>
+        pretty t1 <> line <>
+        pretty "     with" <> line <+>
+        pretty t2
 
     InifiniteType (TypeVar name) t ->
         pretty "Infinite type: subsituting " <+>
         pretty t <+> pretty "for" <+> pretty t <+>
         pretty "would result in an infinite type"
 
-    Ambigious _ -> pretty "There is no unique solution for this set of constraints"
+    Ambigious constraints ->
+        pretty "There is no unique solution for following set of constraints" <+>
+        line <> cs
+            where cs = mapMismatch constraints
 
-    UnificationMismatch _ _ -> pretty "Unification failed ..."
+    UnificationMismatch ts ts' ->
+        pretty "Unification failed for following constraints" <+> line <> ms
+            where ms = mapMismatch $ zip ts ts'
+
+    -- Maps constraints to UnificationFail
+    where mapMismatch = vsep . map pretty . map (\(t1, t2) -> UnificationFail t1 t2)
+

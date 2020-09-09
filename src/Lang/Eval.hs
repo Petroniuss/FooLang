@@ -22,7 +22,9 @@ import           Control.Monad.Identity (Identity)
 import           Control.Monad.Reader
 import           Lang.Syntax
 
--------------------------- TOP LEVEL ----------------------------------
+----------------------------------------------------------------------
+-- Interface ---------------------------------------------------------
+----------------------------------------------------------------------
 
 type TermEnv = Map.Map String Value
 
@@ -46,6 +48,8 @@ data Value
     | VClosure { argName :: String, body :: Expr, ctx :: TermEnv }
     deriving (Eq, Ord, Show)
 
+----------------------------------------------------------------------
+-- Implementation ----------------------------------------------------
 ----------------------------------------------------------------------
 
 -- |Eval monad
@@ -142,3 +146,6 @@ inModified ctx' name value action =
 -- |Bind name to value and return modified environment
 extendEnv :: TermEnv -> (String, Value) -> TermEnv
 extendEnv env (name, value)= Map.insert name value env
+
+----------------------------------------------------------------------
+----------------------------------------------------------------------

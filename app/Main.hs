@@ -34,7 +34,7 @@ import           Text.Parsec.Error                     (ParseError)
 
 
 -------------------------------------------------------------------------------
--- Types
+-- Shell State
 -------------------------------------------------------------------------------
 
 data ShellState = ShellState
@@ -50,14 +50,14 @@ initState = ShellState
 definitions :: ShellState -> [String]
 definitions ShellState { termEnv = tEnv } = Map.keys tEnv
 
-type Repl a = HaskelineT (StateT ShellState IO) a
+type Shell a = HaskelineT (StateT ShellState IO) a
 
 -------------------------------------------------------------------------------
 -- Execution
 -------------------------------------------------------------------------------
 
 -- Everything happens here!
-exec :: T.Text -> Repl ()
+exec :: T.Text -> Shell ()
 exec source = do
   -- Get the current interpreter state
   ShellState { typeEnv = tpEnv, termEnv = tmEnv } <- get
@@ -70,44 +70,36 @@ exec source = do
 
   -- Create updated environment
   let st' = ShellState { termEnv = foldl' evalDef tmEnv ast
-                   , typeEnv = tpEnv' }
+                       , typeEnv = tpEnv' }
   -- Update environment
   put st'
 
-  -- If a value is entered then typecheck, evaluate and print it.
+  -- If an expression is entered then typecheck, evaluate and print it.
   case it of
     Nothing -> return ()
     Just ex -> do
-      -- Eval expr and report error it it occurs
+      -- Eval expr and report error if it occurs
       tp <- handleTypeError $ inferIt tpEnv' ex
       -- This one cannot fail :)
       let val = evalExpr tmEnv ex
 
       -- Show evaluated value alongside its type
-      replSuccess $ prettyIt val tp
-
--- Show success
-replSuccess :: Doc AnsiStyle -> Repl ()
-replSuccess doc = liftIO $ renderSuccess doc
-
--- Show failure
-replFailure :: Doc AnsiStyle -> Repl ()
-replFailure doc = liftIO $ renderFailure doc
+      shellSuccess $ prettyIt val tp
 
 -- -------------------------------------------------------------------------------
 -- -- Errors
 -- -------------------------------------------------------------------------------
 
-handleParseError :: Either ParseError b -> Repl b
+handleParseError :: Either ParseError b -> Shell b
 handleParseError = handleErrorPretty . (left show)
 
-handleTypeError :: Either TypeError a -> Repl a
+handleTypeError :: Either TypeError a -> Shell a
 handleTypeError = handleErrorPretty
 
-handleErrorPretty :: Pretty a => Either a b -> Repl b
+handleErrorPretty :: Pretty a => Either a b -> Shell b
 handleErrorPretty either =
   case either of
-    Left err -> (replFailure . pretty) err >> abort
+    Left err -> (shellFailue . pretty) err >> abort
     Right a  -> return a
 
 -- -------------------------------------------------------------------------------
@@ -115,37 +107,38 @@ handleErrorPretty either =
 -- -------------------------------------------------------------------------------
 
 -- :browse command
-browse :: String -> Repl ()
+browse :: String -> Shell ()
 browse _ = do
   ShellState { typeEnv = tpEnv } <- get
   liftIO $ renderSuccess (prettyEnv tpEnv)
 
 -- :load command
-load :: String -> Repl ()
+load :: String -> Shell ()
 load args = do
   contents <- liftIO $ T.readFile args
   exec contents
 
 -- :type command
-typeof :: String -> Repl ()
+typeof :: String -> Shell ()
 typeof arg = do
   ShellState { typeEnv = env } <- get
   let arg' = strip arg
   case TypeEnv.lookup env arg' of
-    Nothing  -> replFailure $ prettyDefNotFound arg'
-    Just val -> replSuccess $ prettyNamedScheme arg' val
+    Nothing  -> shellFailue $ prettyDefNotFound arg'
+    Just val -> shellSuccess $ prettyNamedScheme arg' val
 
     where strip = T.unpack . T.strip . T.pack
 
 -- :quit command
-quit :: a -> Repl ()
+quit :: a -> Shell ()
 quit _ = liftIO $ exitSuccess
 
 -- -------------------------------------------------------------------------------
 -- Shell
 -- -------------------------------------------------------------------------------
 
-shell :: Repl a -> IO ()
+-- | High level interface for creating a shell - for more documentation refer to hackage.
+shell :: Shell a -> IO ()
 shell action =
   (flip evalStateT) initState $
   evalReplOpts $ ReplOpts {
@@ -158,6 +151,14 @@ shell action =
     initialiser = shellWelcome >> action >> return (),
     finaliser = shellGoodbye
   }
+
+-- |Show success
+shellSuccess :: Doc AnsiStyle -> Shell ()
+shellSuccess doc = liftIO $ renderSuccess doc
+
+-- |Show failure
+shellFailue :: Doc AnsiStyle -> Shell ()
+shellFailue doc = liftIO $ renderFailure doc
 
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
 defaultMatcher = [
@@ -175,7 +176,7 @@ comp n = do
 commandNames :: [String]
 commandNames = map ((\s -> ":" <> s) . fst) shellOptions
 
-shellOptions :: [(String, String -> Repl ())]
+shellOptions :: [(String, String -> Shell ())]
 shellOptions = [
     ("load"   , load)        -- :load   -> interpret file with source code
   , ("browse" , browse)      -- :browse -> browse all definitons
@@ -183,7 +184,7 @@ shellOptions = [
   , ("type"   , typeof)      -- :type   -> check type of definition
   ]
 
-say :: String -> Repl ()
+say :: String -> Shell ()
 say words = do
   liftIO $ renderSuccess . pretty $ words
 
@@ -199,22 +200,22 @@ asciiArt =
 shellCompleter :: CompleterStyle (StateT ShellState IO)
 shellCompleter = Prefix (wordCompleter comp) defaultMatcher
 
-shellWelcome :: Repl ()
+shellWelcome :: Shell ()
 shellWelcome = say asciiArt >> say "-- Welcome to FooLang"
 
-shellGoodbye :: Repl ExitDecision
+shellGoodbye :: Shell ExitDecision
 shellGoodbye = say "Bye bye" >> return Exit
 
-shellBanner :: MultiLine -> Repl String
+shellBanner :: MultiLine -> Shell String
 shellBanner SingleLine = pure "FooLang> "
 shellBanner MultiLine  = pure "| "
 
-shellAction :: String -> Repl ()
+shellAction :: String -> Shell ()
 shellAction source = exec (T.pack source)
 
 -----------------------------------------------------------------------------
 -- Main
--- -------------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 
 main :: IO ()
 main = do
