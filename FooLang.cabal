@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 36f4354999b0890ee5201ed3619376ecc4c976ffd5b19a78b68a25673d93b187
+-- hash: a65730a483f1ae20dca447e06ad7c6938250ab23b2f3912ac1b5b9454c3e45b5
 
 name:           FooLang
 version:        0.1.0.0
@@ -35,6 +35,7 @@ library
       Lang.Substitution
       Lang.Syntax
       Lang.TypeEnv
+      Lang.Utils.Util
   other-modules:
       Paths_FooLang
   hs-source-dirs:

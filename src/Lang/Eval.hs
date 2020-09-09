@@ -23,6 +23,7 @@ import           Control.Monad
 import           Control.Monad.Identity (Identity)
 import           Control.Monad.Reader
 import           Lang.Syntax
+import           Lang.Utils.Util
 
 ----------------------------------------------------------------------
 -- Interface
@@ -57,10 +58,6 @@ data Value
 -- |Eval monad.
 type EvalT a = Reader TermEnv a
 
--- |We need that in order to perform non-exhaustive pattern matching.
-instance MonadFail Identity where
-    fail = fail
-
 -- |Behold evaluation logic ->
 --      Quite simple since we know that well-typed program cannot go wrong.
 eval :: Expr -> EvalT Value
@@ -79,7 +76,7 @@ eval expr = case expr of
         ctx <- ask
         return $ VClosure name body ctx
 
-    -- Bind name in closure to value of latter expression and evaluate first one.
+    -- Bind name in closure to value of latter expression and evaluate the first one.
     (App e1 e2) -> do
         VClosure name body ctx' <- eval e1
         v2 <- eval e2

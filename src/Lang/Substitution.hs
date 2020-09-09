@@ -31,6 +31,9 @@ emptySubst = Map.empty
 extendSubst :: TypeVar -> Type -> Subsitution -> Subsitution
 extendSubst = Map.insert
 
+keys :: Subsitution -> [TypeVar]
+keys = Map.keys
+
 class Substitutable a where
     -- |Returns set of all free type variables.
     ftv :: a -> Set.Set TypeVar
@@ -59,8 +62,13 @@ instance Substitutable Type where
 instance Substitutable TypeScheme where
     ftv (Forall vars tp) = (ftv tp) `Set.difference` (Set.fromList vars)
 
-    substitute subs (Forall vars tp) = Forall vars $ substitute s' tp
-                            where s' = foldr Map.delete subs vars
+    substitute subs (Forall vars tp) =
+                            Forall vars $ substitute s' tp
+                            -- where s' = foldr Map.delete subs vars
+                            where s' = subs
+                                -- vars' = map (substitute subs) vars
+
+
 
 instance Substitutable TypeEnv where
     ftv env = ftv $ Map.elems env

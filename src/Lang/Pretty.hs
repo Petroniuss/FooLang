@@ -3,6 +3,11 @@
 module Lang.Pretty where
 
 import           Control.Monad                             (replicateM)
+import           Control.Monad                             (foldM)
+import           Control.Monad.Identity                    (Identity,
+                                                            runIdentity)
+import           Control.Monad.Trans.State                 (StateT, evalStateT,
+                                                            get, put)
 import           Data.Map                                  (toList)
 import           Data.Text.Prettyprint.Doc                 (Doc, Pretty, align,
                                                             annotate, emptyDoc,
@@ -12,6 +17,7 @@ import           Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle, Color (Bl
                                                             bold, color, putDoc)
 import           Lang.Eval
 import           Lang.Infer
+import           Lang.Substitution
 import           Lang.Syntax
 import           Lang.TypeEnv
 
@@ -56,15 +62,42 @@ prettyNamedScheme name scheme =
     pretty name <+> pretty "::" <+> schemeDoc
         where schemeDoc = prettyScheme scheme
 
+
 -- Here we could rename vars from typescheme so that they would appear in alphabetical order
 prettyScheme :: TypeScheme -> Doc ann
-prettyScheme (Forall tvars tp) =
-    let d = case tvars of
+prettyScheme schema =
+    let (Forall tvars tp) = freshSchema schema
+        d = case tvars of
                 [] -> pretty ""
                 _  -> pretty "forall" <+>
                         (align . sep . (map pretty) $ tvars) <+>
                         pretty "=> "
         in d <> prettyType tp
+
+--
+name :: StateT [String] Identity Type
+name = do
+    (x:xs) <- get
+    put xs
+    return $ TVar $ TypeVar $ x
+
+freshSchema :: TypeScheme -> TypeScheme
+freshSchema (Forall vars tp) =
+    let
+        subst = freshVars vars
+        vars' = keys subst
+        tp' = substitute subst tp
+        in Forall vars' tp'
+
+alphabet = [1..] >>= flip replicateM ['a'..'z']
+
+freshVars vars =
+    runIdentity $ flip evalStateT alphabet $
+        foldM (\acc e -> do
+            tp <- name
+            return $ extendSubst e tp acc)
+            emptySubst vars
+
 
 instance Pretty Value where
     pretty value = case value of

@@ -19,6 +19,7 @@ import           Control.Monad.RWS      (RWST, ask, evalRWS, evalRWST, local,
 import           Data.List              (foldl')
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
+import           Lang.Utils.Util
 
 
 -- We're going to collect set of constraints from our ast and
@@ -47,9 +48,6 @@ type Constraint = (Type, Type)
 -- We generate constraints using stateful generation of new names
 type Infer a = RWST TypeEnv [Constraint] [String] (Except TypeError) a
 
--- Generating type names
-instance MonadFail Identity where
-    fail = error "pattern matching failed"
 
 freshType :: Infer Type
 freshType = do
