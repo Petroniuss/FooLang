@@ -91,9 +91,9 @@ eval expr = case expr of
         return $ f v1 v2
 
     -- We evaluate expression in extended environement
-    (Let name e1 e2) -> do
+    (Let argName e1 e2) -> do
         v1 <- eval e1
-        inExtended name v1 (eval e2)
+        inExtended argName v1 (eval e2)
 
     -- Check predicate and evaluate either left or right branch
     (If predE trBranchE flBranchE) -> do

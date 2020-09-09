@@ -104,7 +104,6 @@ generalize :: TypeEnv -> Type -> TypeScheme
 generalize tpEnv tpe = Forall vars tpe
     where vars = Set.toList $ ftv tpe `Set.difference` ftv tpEnv
 
-----
 
 type Subsitution = Map.Map TypeVar Type
 
@@ -114,6 +113,9 @@ s1 `compose` s2 = Map.map (substitute s1) s2 `Map.union` s1
 
 emptySubst :: Subsitution
 emptySubst = Map.empty
+
+extendSubst :: TypeVar -> Type -> Subsitution -> Subsitution
+extendSubst = Map.insert
 
 class Substitutable a where
     -- Returns set of all free type variables
@@ -157,9 +159,28 @@ instance Substitutable a => Substitutable [a] where
     substitute subs xs = substitute subs <$> xs
 
 instance (Substitutable a) => Substitutable (a, a) where
-    ftv (x, y) = ftv x `Set.union` ftv y
+    ftv (x, y) = (ftv x) `Set.union` (ftv y)
 
     substitute subs (x, y) = (substitute subs x, substitute subs y)
+
+-- There are some bugs because we don't introduce new types in place of those already in env
+
+-- Two solutions here:
+-- We might keep names supply in Shell monad but I don't like that..
+-- Other thing we might do -> rename all types whenever we bring them from type env.
+
+
+freshTypeVars :: [TypeVar] -> Infer Subsitution
+freshTypeVars =
+    flip foldM emptySubst $
+        \acc e -> do
+            var <- freshType
+            return $ extendSubst e var acc
+
+instantiateSchema :: TypeScheme -> Infer Type
+instantiateSchema schema@(Forall vars tpe) = do
+    map <- freshTypeVars vars
+    return $ substitute map tpe
 
 infer :: Expr -> Infer Type
 infer expr =
@@ -167,8 +188,9 @@ infer expr =
         Var name -> do
             env <- ask
             case TypeEnv.lookup env name of
-                Nothing             -> throwError $ UnboundVariable name
-                Just (Forall _ tpe) -> return tpe
+                Nothing     -> throwError $ UnboundVariable name
+                -- Here we should proobably instantiate this tpe with fresh type foreach typevar there
+                Just schema -> instantiateSchema schema
 
         App e1 e2 -> do
             t1 <- infer e1
@@ -223,12 +245,10 @@ opType Mul = typeInt `TArr` typeInt `TArr` typeInt
 opType Eql = typeInt `TArr` typeInt `TArr` typeBool
 
 
--- Interface
 -- evalInfer :: Expr -> TypeEnv -> (Type, [Constraint])
 evalInfer :: Expr -> TypeEnv -> Either TypeError (Type, [Constraint])
 evalInfer expr env = runExcept $ evalRWST (infer expr) env inifiniteNamesSupply
 
--- I just wanna run this guy to see what we have so far
 
 -- Constraint solver
 

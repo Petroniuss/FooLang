@@ -174,7 +174,8 @@ comp n = do
   return $ filter (isPrefixOf n) (cmds ++ defs)
 
 commandNames :: [String]
-commandNames = map ((\s -> ":" <> s) . fst) shellOptions
+commandNames = pasteOption : map ((\s -> ":" <> s) . fst) shellOptions
+  where pasteOption = ":paste"
 
 shellOptions :: [(String, String -> Shell ())]
 shellOptions = [

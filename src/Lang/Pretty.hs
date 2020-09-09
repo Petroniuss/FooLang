@@ -55,6 +55,7 @@ prettyNamedScheme name scheme =
     pretty name <+> pretty "::" <+> schemeDoc
         where schemeDoc = prettyScheme scheme
 
+-- Here we could rename vars from typescheme so that they would appear in alphabetical order
 prettyScheme :: TypeScheme -> Doc ann
 prettyScheme (Forall tvars tp) =
     let d = case tvars of
