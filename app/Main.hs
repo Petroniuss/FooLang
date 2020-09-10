@@ -41,7 +41,7 @@ import           Text.Parsec.Error                     (ParseError)
 data ShellState = ShellState
   { typeEnv :: TypeEnv.TypeEnv  -- Type environment
   , termEnv :: TermEnv          -- Value environment
-  } deriving (Show)
+  }
 
 initState :: ShellState
 initState = ShellState
@@ -75,7 +75,7 @@ exec source = do
   -- Update environment
   put st'
 
-  -- If an expression is entered then typecheck, evaluate and print it.
+  -- If an expression is entered then typecheck, evaluate and print.
   case it of
     Nothing -> return ()
     Just ex -> do
@@ -111,7 +111,7 @@ handleErrorPretty either =
 browse :: String -> Shell ()
 browse _ = do
   ShellState { typeEnv = tpEnv } <- get
-  liftIO $ renderSuccess (prettyEnv tpEnv)
+  liftIO . renderSuccess . pretty $ tpEnv
 
 -- :load command
 load :: String -> Shell ()
@@ -155,11 +155,11 @@ shell action =
 
 -- |Show success
 shellSuccess :: Doc AnsiStyle -> Shell ()
-shellSuccess doc = liftIO $ renderSuccess doc
+shellSuccess doc = liftIO . renderSuccess $ doc
 
 -- |Show failure
 shellFailue :: Doc AnsiStyle -> Shell ()
-shellFailue doc = liftIO $ renderFailure doc
+shellFailue doc = liftIO . renderFailure $ doc
 
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
 defaultMatcher = [
