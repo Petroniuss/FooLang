@@ -5,7 +5,11 @@ module Lang.Syntax where
 ------------------------------------------------------------------------
 
 {-
-    Module defines our abstract syntax tree and type system.
+    Module defines our abstract syntax tree.
+
+    Note that this language is very small,
+    but on the other hand haskell's internal Core
+    language is boiled down to 9 constructors.
 
     I suppose this is the most important module.
 -}

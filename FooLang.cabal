@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 23b6dc98860f86fb1c18fec4958ace11d1da3be7e851e0c7e1178930c499be97
+-- hash: b1e52a535000eb8c120124bae34ec79fafa5adf7683b74951a06d4a2c1caddb0
 
 name:           FooLang
 version:        1.0.0.0
@@ -38,7 +38,6 @@ library
       Lang.TypeInference.Infer
       Lang.TypeInference.Substitution
       Lang.TypeInference.Type
-      Lang.TypeInference.TypeError
       Lang.Utils.Util
   other-modules:
       Paths_FooLang

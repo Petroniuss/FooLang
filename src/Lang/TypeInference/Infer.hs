@@ -4,9 +4,13 @@
 module Lang.TypeInference.Infer where
 
 import           Lang.Syntax
-import           Lang.TypeEnv                    as TypeEnv
+import           Lang.TypeEnv                        as TypeEnv
 import           Lang.TypeInference.Substitution
+
 import           Lang.TypeInference.Type
+
+import           Lang.TypeInference.ConstraintSolver
+import           Lang.TypeInference.ConstraintWriter
 
 import           Control.Applicative
 import           Control.Monad.Except
@@ -14,153 +18,14 @@ import           Control.Monad.State
 
 import           Data.Monoid
 
-import           Control.Monad.Identity          (Identity)
-import           Control.Monad.RWS               (RWST, ask, evalRWS, evalRWST,
-                                                  local, tell)
-import           Data.List                       (foldl')
-import qualified Data.Map                        as Map
-import qualified Data.Set                        as Set
+import           Control.Monad.Identity              (Identity)
+import           Control.Monad.RWS                   (RWST, ask, evalRWS,
+                                                      evalRWST, local, tell)
+import           Data.List                           (foldl')
+import qualified Data.Map                            as Map
+import qualified Data.Set                            as Set
 import           Lang.Utils.Util
 
--- Todo refactor this guy -> possibly break it down into 3 smaller modules:
---
-
--- We're going to collect set of constraints from our ast and
--- then apply substiutions as specified in algorithm which will yield our final
--- solution
-
-
-
-
--- We generate constraints using stateful generation of new names
-type Infer a = RWST TypeEnv [Constraint] [String] (Except TypeError) a
-
-
-freshType :: Infer Type
-freshType = do
-    var <- freshTypeVar
-    return $ TVar var
-
-freshTypeVar :: Infer TypeVar
-freshTypeVar = do
-    name <- freshName
-    return $ TypeVar name
-
-freshName :: Infer String
-freshName = do
-    (name:others) <- get
-    put others
-    return name
-
-typeNamesSupply :: [String]
-typeNamesSupply = [1..] >>= flip replicateM ['a'..'z']
-
-----
-
-addConstraint :: (Type , Type) -> Infer ()
-addConstraint (t1,t2) = do tell [(t1, t2)]
-
-
-locally :: (String, TypeScheme) -> Infer a -> Infer a
-locally (name, scheme) inf = do
-    let trans e = Map.insert name scheme e
-    local trans inf
-
-
-emptyScheme :: Type -> TypeScheme
-emptyScheme var = Forall [] var
-
-
-generalize :: TypeEnv -> Type -> TypeScheme
-generalize tpEnv tpe = Forall vars tpe
-    where vars = Set.toList $ ftv tpe `Set.difference` ftv tpEnv
-
-
-
--- There are some bugs because we don't introduce new types in place of those already in env
-
--- Two solutions here:
--- We might keep names supply in Shell monad but I don't like that..
--- Other thing we might do -> rename all types whenever we bring them from type env.
-
-
-freshTypeVars :: [TypeVar] -> Infer Subsitution
-freshTypeVars =
-    flip foldM emptySubst $
-        \acc e -> do
-            var <- freshType
-            return $ extendSubst e var acc
-
-instantiateSchema :: TypeScheme -> Infer Type
-instantiateSchema schema@(Forall vars tpe) = do
-    map <- freshTypeVars vars
-    return $ substitute map tpe
-
-infer :: Expr -> Infer Type
-infer expr =
-    case expr of
-        Var name -> do
-            env <- ask
-            case TypeEnv.lookup env name of
-                Nothing     -> throwError $ UnboundVariable name
-                Just schema -> instantiateSchema schema
-
-        App e1 e2 -> do
-            t1 <- infer e1
-            t2 <- infer e2
-            resultT <- freshType
-            addConstraint (t1, t2 `TArr` resultT)
-            return resultT
-
-        Lam name expr -> do
-            argT <- freshType
-            res <- locally (name, emptyScheme argT) $ infer expr
-            return (argT `TArr` res)
-
-        Let name e1 e2 -> do
-            t1 <- infer e1
-            env <- ask
-            let generalized = generalize env t1
-            locally (name, generalized) $ infer e2
-
-        Lit (LInt _)  -> return typeInt
-
-        Lit (LBool _) -> return typeBool
-
-        If condE trE flE -> do
-            t1 <- infer condE
-            t2 <- infer trE
-            t3 <- infer flE
-            addConstraint (t1, typeBool)
-            addConstraint (t2, t3)
-            return t2
-
-        Fix e1 -> do
-            t1 <- infer e1
-            tv <- freshType
-            addConstraint (tv `TArr` tv, t1)
-            return tv
-
-        Op binop e1 e2 -> do
-            t1 <- infer e1
-            t2 <- infer e2
-            resT <- freshType
-            let actual = t1 `TArr` t2 `TArr` resT
-                expected = opType binop
-
-            addConstraint (actual, expected)
-            return resT
-
-opType :: BinOp -> Type
-opType Add = typeInt `TArr` typeInt `TArr` typeInt
-opType Sub = typeInt `TArr` typeInt `TArr` typeInt
-opType Mul = typeInt `TArr` typeInt `TArr` typeInt
-opType Eql = typeInt `TArr` typeInt `TArr` typeBool
-
-
--- evalInfer :: Expr -> TypeEnv -> (Type, [Constraint])
-evalInfer :: Expr -> TypeEnv -> Either TypeError (Type, [Constraint])
-evalInfer expr env = runExcept $ evalRWST (infer expr) env typeNamesSupply
 
 
 -- Constraint solver
@@ -206,6 +71,8 @@ solve = do
 
 runSolve :: [Constraint] -> Either TypeError Subsitution
 runSolve cs = runExcept $ evalStateT solve (emptySubst, cs)
+
+-- Interface
 
 inferIt :: TypeEnv -> Expr -> Either TypeError TypeScheme
 inferIt env expr = do

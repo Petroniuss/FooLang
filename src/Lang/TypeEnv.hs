@@ -17,7 +17,7 @@ import           Lang.TypeInference.Type
 
 {-
     Our typing environment is simply wrapper over map from
-        Expression identifier to its type schema:
+        Expression identifier to its type scheme:
         - forall []    => Int -> Int
         - forall ["a"] => a -> Int
 -}

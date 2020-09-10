@@ -9,6 +9,7 @@ import           Lang.Pretty
 import           Lang.Syntax
 import qualified Lang.TypeEnv                          as TypeEnv
 import           Lang.TypeInference.Infer
+import           Lang.TypeInference.Type
 
 import qualified Data.Map                              as Map
 import           Data.Monoid
