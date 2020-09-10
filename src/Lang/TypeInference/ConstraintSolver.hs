@@ -27,7 +27,7 @@ import           Lang.TypeInference.ConstraintWriter
 -- Interface
 ------------------------------------------------------------------------
 
--- | Yields TypeScheme or Substitution.
+-- | Yields TypeError or Substitution.
 runSolve :: [Constraint] -> Either TypeError Subsitution
 runSolve cs = runExcept $ evalStateT solve (emptySubst, cs)
 
