@@ -44,8 +44,10 @@ type ConstraintWriter a = RWST
 --              Interface
 ------------------------------------------------------------------------
 
-evalInfer :: Expr -> TypeEnv -> Either TypeError (Type, [Constraint])
-evalInfer expr env = runExcept $ evalRWST (writeConstraints expr) env freshNamesSupply
+-- | Infer type and constraints for given expression and type environment.
+evalConstraintWriter :: Expr -> TypeEnv -> Either TypeError (Type, [Constraint])
+evalConstraintWriter expr env = runExcept $
+    evalRWST (writeConstraints expr) env freshNamesSupply
 
 ------------------------------------------------------------------------
 --              Implementation
