@@ -21,7 +21,7 @@ import           Lang.Utils.Util
 ------------------------------------------------------------------------
 
 {-
-    This module is single interface for Type Inference.
+    This module is a single interface for Type Inference.
 -}
 
 ------------------------------------------------------------------------
