@@ -5,10 +5,11 @@ import           Control.Monad
 import           Control.Monad.Identity
 import           Control.Monad.State
 
-import qualified Data.Map               as Map
+import qualified Data.Map                as Map
 
-import           Data.List              (foldl')
+import           Data.List               (foldl')
 import           Lang.Syntax
+import           Lang.TypeInference.Type
 
 ------------------------------------------------------------------------
 --              Typing Environment

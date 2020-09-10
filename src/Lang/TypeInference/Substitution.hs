@@ -1,10 +1,12 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Lang.Substitution where
+module Lang.TypeInference.Substitution where
 
-import qualified Data.Map     as Map
-import qualified Data.Set     as Set
+import qualified Data.Map                as Map
+import qualified Data.Set                as Set
+
 import           Lang.Syntax
 import           Lang.TypeEnv
+import           Lang.TypeInference.Type
 
 ------------------------------------------------------------------------
 --              Substitution

@@ -17,10 +17,11 @@ import           Data.Text.Prettyprint.Doc                 (Doc, Pretty, align,
 import           Data.Text.Prettyprint.Doc.Render.Terminal (AnsiStyle, Color (Blue, Green, Red),
                                                             bold, color, putDoc)
 import           Lang.Eval
-import           Lang.Substitution
 import           Lang.Syntax
 import           Lang.TypeEnv
 import           Lang.TypeInference.Infer
+import           Lang.TypeInference.Substitution
+import           Lang.TypeInference.Type
 
 
 successStyle :: AnsiStyle

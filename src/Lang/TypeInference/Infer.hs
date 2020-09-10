@@ -3,9 +3,10 @@
 
 module Lang.TypeInference.Infer where
 
-import           Lang.Substitution
 import           Lang.Syntax
-import           Lang.TypeEnv           as TypeEnv
+import           Lang.TypeEnv                    as TypeEnv
+import           Lang.TypeInference.Substitution
+import           Lang.TypeInference.Type
 
 import           Control.Applicative
 import           Control.Monad.Except
@@ -13,12 +14,12 @@ import           Control.Monad.State
 
 import           Data.Monoid
 
-import           Control.Monad.Identity (Identity)
-import           Control.Monad.RWS      (RWST, ask, evalRWS, evalRWST, local,
-                                         tell)
-import           Data.List              (foldl')
-import qualified Data.Map               as Map
-import qualified Data.Set               as Set
+import           Control.Monad.Identity          (Identity)
+import           Control.Monad.RWS               (RWST, ask, evalRWS, evalRWST,
+                                                  local, tell)
+import           Data.List                       (foldl')
+import qualified Data.Map                        as Map
+import qualified Data.Set                        as Set
 import           Lang.Utils.Util
 
 -- Todo refactor this guy -> possibly break it down into 3 smaller modules:
@@ -28,23 +29,8 @@ import           Lang.Utils.Util
 -- then apply substiutions as specified in algorithm which will yield our final
 -- solution
 
-data TypeError
-    -- Variable is not preseant in env
-    = UnboundVariable String
-    -- We couldn't have unified these two types.
-    -- Thrown when we can't make any substiution - even an empty one.
-    | UnificationFail Type Type
-    -- This is subtle.
-    -- We throw this one when subsitution would result in an infinite type.
-    -- Example: unifying typevar a and type a -> b
-    | InifiniteType TypeVar Type
-    -- There's no unique solution to given set of constraints
-    | Ambigious [Constraint]
-    -- Duunot know :)
-    | UnificationMismatch [Type] [Type]
 
 
-type Constraint = (Type, Type)
 
 -- We generate constraints using stateful generation of new names
 type Infer a = RWST TypeEnv [Constraint] [String] (Except TypeError) a

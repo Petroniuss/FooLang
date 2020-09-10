@@ -33,29 +33,6 @@ data Literal
 data BinOp = Add | Sub | Mul | Eql
     deriving (Eq, Ord, Show)
 
-------------------------------------------------------------------------
--- Types
-------------------------------------------------------------------------
-
--- Type variable example: a
-newtype TypeVar = TypeVar String
-    deriving (Eq, Show, Ord)
-
-data Type
-    = TVar TypeVar      -- Type variable - polymorphic types
-    | TCon String       -- Ground type
-    | TArr Type Type    -- Function type
-    deriving (Eq, Show, Ord)
-
-infixr `TArr`
-
--- Example: forall a b => a -> b -> Int
-data TypeScheme = Forall [TypeVar] Type
-    deriving (Eq, Show, Ord)
-
--- Ground types
-typeInt = TCon "Int"
-typeBool = TCon "Bool"
 
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
