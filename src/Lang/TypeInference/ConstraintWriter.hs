@@ -179,11 +179,20 @@ instantiateScheme (Forall vars tpe) = do
 
 -- |Type for each binary operator.
 opType :: BinOp -> Type
-opType Add = typeInt `TArr` typeInt `TArr` typeInt
-opType Sub = typeInt `TArr` typeInt `TArr` typeInt
-opType Mul = typeInt `TArr` typeInt `TArr` typeInt
-opType Eql = typeInt `TArr` typeInt `TArr` typeBool
-
+opType op = case op of
+    Add -> intArrowIntArrowInt
+    Sub -> intArrowIntArrowInt
+    Mul -> intArrowIntArrowInt
+    Eql -> intArrowIntArrowBool
+    Lt  -> intArrowIntArrowBool
+    Lte -> intArrowIntArrowBool
+    Gt  -> intArrowIntArrowBool
+    Gte -> intArrowIntArrowBool
+    Or  -> boolArrowBoolArrowBool
+    And -> boolArrowBoolArrowBool
+    where intArrowIntArrowInt  = typeInt `TArr` typeInt `TArr` typeInt
+          intArrowIntArrowBool = typeInt `TArr` typeInt `TArr` typeBool
+          boolArrowBoolArrowBool = typeBool `TArr` typeBool `TArr` typeBool
 
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
