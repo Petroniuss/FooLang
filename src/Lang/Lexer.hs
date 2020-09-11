@@ -26,7 +26,9 @@ reservedNames = [
     "rec",
     "if",
     "then",
-    "else"
+    "else",
+    "and",
+    "or"
   ]
 
 reservedOps :: [String]
