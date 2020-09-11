@@ -23,7 +23,6 @@ reservedNames :: [String]
 reservedNames = [
     "let",
     "in",
-    "fix",
     "rec",
     "if",
     "then",
@@ -37,7 +36,14 @@ reservedOps = [
     "+",
     "*",
     "-",
-    "="
+    "=",
+    "==",
+    "<",
+    "<=",
+    ">",
+    ">=",
+    "and",
+    "or"
   ]
 
 lexer :: Tok.GenTokenParser L.Text () Identity

@@ -10,6 +10,7 @@ import           Lang.Syntax
 import qualified Lang.TypeEnv                          as TypeEnv
 import           Lang.TypeInference.Infer
 import           Lang.TypeInference.Type
+import           Lang.Utils.Util
 
 import qualified Data.Map                              as Map
 import           Data.Monoid
@@ -32,6 +33,14 @@ import           System.Console.Repline
 import           System.Environment
 import           System.Exit
 import           Text.Parsec.Error                     (ParseError)
+
+------------------------------------------------------------------------
+--              Main module
+------------------------------------------------------------------------
+
+{-
+    This module utilizes repline for creating an interactive shell.
+-}
 
 
 -------------------------------------------------------------------------------
@@ -116,8 +125,9 @@ browse _ = do
 -- :load command
 load :: String -> Shell ()
 load args = do
-  contents <- liftIO $ T.readFile args
+  contents <- liftIO . T.readFile . strip $ args
   exec contents
+  browse args
 
 -- :type command
 typeof :: String -> Shell ()
@@ -128,7 +138,6 @@ typeof arg = do
     Nothing  -> shellFailue $ prettyDefNotFound arg'
     Just val -> shellSuccess $ prettyNamedScheme arg' val
 
-    where strip = T.unpack . T.strip . T.pack
 
 -- :quit command
 quit :: a -> Shell ()
@@ -223,7 +232,10 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-    []      -> shell (return ())
-    [fname] -> shell (load fname >> browse fname)
-    _       -> renderFailure $ pretty ("Bad args" :: String)
+    []      -> shell . return $ ()
+    [fname] -> shell . load $ fname
+    _       -> renderFailure . pretty $ ("Bad args" :: String)
 
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------

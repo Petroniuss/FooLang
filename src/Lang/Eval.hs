@@ -109,20 +109,19 @@ eval expr = case expr of
 -- |Maps binary operation to function on values.
 op :: BinOp -> (Value -> Value -> Value)
 op binop = case binop of
-    Add -> plus
-    Sub -> minus
-    Mul -> mult
-    Eql -> eql
+    Add -> liftIntOp (+) (VInt)
+    Sub -> liftIntOp (-) (VInt)
+    Mul -> liftIntOp (*) (VInt)
+    Eql -> liftIntOp (==) VBool
+    Lt  -> liftIntOp (<) (VBool)
+    Lte -> liftIntOp (<=) (VBool)
+    Gt  -> liftIntOp (>) (VBool)
+    Gte -> liftIntOp (>=) (VBool)
+    And -> liftBoolOp (&&)
+    Or  -> liftBoolOp (||)
     where
         liftIntOp f con (VInt i1) (VInt i2) = con $ f i1 i2
-
-        plus = liftIntOp (+) (VInt)
-
-        minus = liftIntOp (-) (VInt)
-
-        mult = liftIntOp (*) (VInt)
-
-        eql = liftIntOp (==) VBool
+        liftBoolOp f (VBool b1) (VBool b2) = VBool $ f b1 b2
 
 -- |Maps Literal to Value.
 instantiateLiteral :: Literal -> Value

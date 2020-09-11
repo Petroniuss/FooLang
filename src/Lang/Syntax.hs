@@ -34,7 +34,19 @@ data Literal
     | LBool Bool
     deriving (Show, Eq, Ord)
 
-data BinOp = Add | Sub | Mul | Eql
+data BinOp
+    -- Operations on ints
+    = Add -- Addition
+    | Sub -- Subtraction
+    | Mul -- Multiplication
+    | Eql -- Equality
+    | Lt  -- Less than
+    | Lte -- Less or equal
+    | Gt  -- Greater than
+    | Gte -- Greater or equal
+    -- Operations on booleans
+    | And
+    | Or
     deriving (Eq, Ord, Show)
 
 

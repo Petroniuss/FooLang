@@ -135,7 +135,13 @@ table = [
     , binary "-" (Op Sub) Ex.AssocLeft
     ],
     [
-      binary "==" (Op Eql) Ex.AssocLeft
+      binary "==" (Op Eql) Ex.AssocLeft,
+      binary "<" (Op Lt) Ex.AssocLeft,
+      binary "<=" (Op Lte) Ex.AssocLeft,
+      binary ">" (Op Gt) Ex.AssocLeft,
+      binary ">=" (Op Gte) Ex.AssocLeft,
+      binary "and" (Op And) Ex.AssocLeft,
+      binary "or" (Op Or) Ex.AssocLeft
     ]
   ]
 
