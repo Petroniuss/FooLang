@@ -47,7 +47,7 @@ Interpreter for a small ⚡functional language⚡.
 - Interpreter supports few commands:
   - `:type fibb` - checks type of given identifier (in this case `fibb`),
   - `:browse` - prints list of defined functions with their respective types,
-  - `:quit` - leave shell or (same as CTRL-D),
+  - `:quit` - quits shell (same as CTRL-D),
   - `:load path` - loads module from a file,
   - `:paste` - enter multline mode.
 
