@@ -80,6 +80,7 @@ lambda = do
   body <- expr
   return $ foldr Lam body args
 
+-- We could possibly let define many bindings using let expresion
 letin :: Parser Expr
 letin = do
   reserved "let"
@@ -89,6 +90,7 @@ letin = do
   reserved "in"
   e2 <- expr
   return (Let x e1 e2)
+
 
 letrecin :: Parser Expr
 letrecin = do
@@ -118,7 +120,11 @@ ifthen = do
   branches <- many elseif
   reserved "else"
   fl <- expr
-  let ex = foldr (\(cnd, inst) e -> If cnd inst e) fl branches
+  let
+    branches' = (cond, tr) : branches
+    ex = foldl' (\e (cnd, inst) -> If cnd inst e) fl $ reverse branches'
+  -- or foldr
+  -- let ex = foldr (\(cnd, inst) e -> If cnd inst e) fl branches'
   return ex
 
 term :: Parser Expr

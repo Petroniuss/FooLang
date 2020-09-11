@@ -150,7 +150,7 @@ quit _ = liftIO $ exitSuccess
 -- | High level interface for creating a shell - for more documentation refer to hackage.
 shell :: Shell a -> IO ()
 shell action =
-  (flip evalStateT) initState $
+  (flip evalStateT) initState . dontCrash .
   evalReplOpts $ ReplOpts {
     banner = shellBanner,
     command = shellAction,
