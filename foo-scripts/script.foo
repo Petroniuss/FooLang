@@ -11,6 +11,9 @@ let fst a b = a
 
 let snd a b = b
 
+-- Classic haskell function
+let flip f x y = f y x
+
 -- Functions returing the same output regardless of input
 let constOne = fst 1
 
@@ -41,5 +44,3 @@ let rec factorial n =
     else
         n * (factorial (n - 1))
         
--- Classic haskell function
-let flip f x y = f y x
