@@ -24,7 +24,7 @@ Interpreter for a small ⚡functional language⚡.
 
   - `let id = (\x -> x)` - type of id: forall a => a -> a
 
-  - `let flip f x y = f y x` - type of f: forall a b c => (a -> b -> c) -> b -> a -> (b -> a -> c).
+  - `let flip f x y = f y x` - type of f: forall a b c => (b -> a -> c) -> (a -> b -> c).
     If you run that you will note that brackets are omitted, but since arrow is right-associative it's all the same.
 
 - Two base types:
