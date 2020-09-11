@@ -7,8 +7,11 @@ let identity x = x
 let identity = (\x -> x)
 
 -- a few polymorphic functions
+
+-- Returns first argument
 let fst a b = a
 
+-- Returns second argument
 let snd a b = b
 
 -- Classic haskell function
