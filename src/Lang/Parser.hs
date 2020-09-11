@@ -13,6 +13,7 @@ import qualified Text.Parsec.Token                   as Tok
 
 import qualified Data.Text.Lazy                      as L
 
+import           Data.List                           (foldl')
 import           Lang.Lexer
 import           Lang.Syntax
 import           Text.ParserCombinators.Parsec.Error (Message (Message),
@@ -100,15 +101,25 @@ letrecin = do
   e2 <- expr
   return (Let x e1 e2)
 
+elseif :: Parser (Expr, Expr)
+elseif = do
+  reserved "else if"
+  cond <- expr
+  reservedOp "then"
+  instructions <- expr
+  return (cond, instructions)
+
 ifthen :: Parser Expr
 ifthen = do
   reserved "if"
   cond <- expr
   reservedOp "then"
   tr <- expr
+  branches <- many elseif
   reserved "else"
   fl <- expr
-  return (If cond tr fl)
+  let ex = foldr (\(cnd, inst) e -> If cnd inst e) fl branches
+  return ex
 
 term :: Parser Expr
 term =
