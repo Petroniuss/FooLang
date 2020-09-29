@@ -34,7 +34,7 @@ typeBool = TCon "Bool"
 type Constraint = (Type, Type)
 
 data TypeError
-    -- Variable is not preseant in env
+    -- Variable is not present in env
     = UnboundVariable String
     -- We couldn't have unified these two types.
     -- Thrown when we can't make any substiution - even an empty one.
@@ -45,7 +45,7 @@ data TypeError
     | InifiniteType TypeVar Type
     -- There's no unique solution to given set of constraints
     | Ambigious [Constraint]
-    -- Duunot know :)
+    -- When shapes of given types don't match and so we cannot make substitution.
     | UnificationMismatch [Type] [Type]
 
 
